@@ -1,0 +1,198 @@
+version: '3.8'
+
+services:
+  # Frontend - React Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_SOCKET_URL=http://localhost:5000
+    depends_on:
+      - api-gateway
+    networks:
+      - careerforge-network
+
+  # API Gateway - Node.js Express
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/careerforge
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - AI_SERVICE_URL=http://ai-brain:5001
+      - COGNITIVE_SERVICE_URL=http://cognitive-screener:5002
+    depends_on:
+      - mongodb
+      - redis
+      - ai-brain
+      - cognitive-screener
+    networks:
+      - careerforge-network
+
+  # AI Brain - Python ML Service
+  ai-brain:
+    build:
+      context: ./backend/microservices/ai-brain
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=gpt-4
+      - MONGODB_URI=mongodb://mongodb:27017/
+      - DATABASE_NAME=careerforge
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - DEBUG=False
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - careerforge-network
+    restart: unless-stopped
+
+  # Cognitive Screener - Python AI Service
+  cognitive-screener:
+    build:
+      context: ./backend/microservices/cognitive-screener
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
+    environment:
+      - PORT=5002
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=gpt-4
+      - MONGODB_URI=mongodb://mongodb:27017/
+      - DATABASE_NAME=careerforge
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=1
+      - DEBUG=False
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - careerforge-network
+    restart: unless-stopped
+
+  # Adaptive Interviewer - AI Interview System
+  adaptive-interviewer:
+    build:
+      context: ./backend/adaptive-interviewer
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - MONGODB_URI=mongodb://mongodb:27017/careerforge
+    depends_on:
+      - mongodb
+      - ai-brain
+    networks:
+      - careerforge-network
+
+  # Autonomous Headhunter - Alumni Outreach
+  autonomous-headhunter:
+    build:
+      context: ./backend/autonomous-headhunter
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MONGODB_URI=mongodb://mongodb:27017/careerforge
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+    depends_on:
+      - mongodb
+      - ai-brain
+    networks:
+      - careerforge-network
+
+  # Analytics Manager
+  analytics-manager:
+    build:
+      context: ./backend/analytics-manager
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/careerforge
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - careerforge-network
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/db-init:/docker-entrypoint-initdb.d
+    environment:
+      - MONGO_INITDB_DATABASE=careerforge
+    networks:
+      - careerforge-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - careerforge-network
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - careerforge-network
+
+  # MinIO S3-Compatible Storage
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-careerforge}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-careerforge123}
+    command: server /data --console-address ":9001"
+    networks:
+      - careerforge-network
+
+networks:
+  careerforge-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
+  qdrant_data:
+  minio_data:
