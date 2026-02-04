@@ -19,7 +19,7 @@ class Config:
     GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
     
     # Database Config
-    MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
+    MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb+srv://db_user:password%40123@careerforge.tkz6cww.mongodb.net/careerforge')
     DATABASE_NAME = os.getenv('DATABASE_NAME', 'careerforge')
     
     # Redis Config

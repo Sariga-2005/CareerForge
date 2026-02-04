@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/careerforge';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://db_user:password%40123@careerforge.tkz6cww.mongodb.net/careerforge';
 
 export const connectDatabase = async (): Promise<void> => {
   try {
     mongoose.set('strictQuery', true);
-    
+
     await mongoose.connect(MONGODB_URI, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
