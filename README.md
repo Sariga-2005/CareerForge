@@ -2,7 +2,7 @@
 
 **From Resume to Offer Letter, Autonomously**
 
-CareerForge is an intelligent placement platform that leverages AI to streamline the campus recruitment process. It provides AI-powered resume analysis, adaptive mock interviews, smart job matching, and real-time analytics.
+CareerForge is an intelligent placement platform that leverages AI to streamline the campus recruitment process. It provides AI-powered resume analysis, adaptive mock interviews, smart job matching, career advising, and real-time analytics.
 
 ---
 
@@ -13,8 +13,9 @@ CareerForge is an intelligent placement platform that leverages AI to streamline
 - [Project Structure](#-project-structure)
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
+- [Environment Variables Setup](#-environment-variables-setup)
 - [Running the Application](#-running-the-application)
-- [Environment Variables](#-environment-variables)
+- [User Roles & Access](#-user-roles--access)
 - [API Documentation](#-api-documentation)
 - [Contributing](#-contributing)
 - [Team](#-team)
@@ -25,11 +26,14 @@ CareerForge is an intelligent placement platform that leverages AI to streamline
 
 | Feature | Description |
 |---------|-------------|
-| **AI Resume Analysis** | BERT-based semantic analysis for resume scoring and ATS compatibility |
-| **Adaptive Mock Interviews** | GPT-4o powered interviews that adapt to candidate responses |
+| **AI Resume Analysis** | Semantic analysis for resume scoring, ATS compatibility, and improvement suggestions |
+| **Adaptive Mock Interviews** | AI-powered interviews with speech recognition and real-time feedback |
 | **Smart Job Matching** | ML-based algorithm matching skills with job requirements |
+| **Career Advisor** | AI-driven career path recommendations based on skills and goals |
+| **Learning Roadmap** | Personalized skill development roadmaps |
 | **Real-time Analytics** | Live dashboards tracking placement readiness |
 | **Alumni Network** | Connect with industry professionals for mentorship |
+| **Admin Dashboard** | Manage students, jobs, placement reports, and system settings |
 
 ---
 
@@ -40,17 +44,18 @@ CareerForge is an intelligent placement platform that leverages AI to streamline
 - **Redux Toolkit** for state management
 - **Tailwind CSS** for styling
 - **Framer Motion** for animations
-- **React Hook Form** for form handling
+- **React Router v6** for routing
 
 ### Backend
-- **Node.js + Express** (API Gateway)
-- **Python + Flask** (AI Microservices)
-- **MongoDB** for database
+- **Node.js + Express** (API Gateway - Port 5000)
+- **Python + Flask** (AI Microservices - Ports 5001, 5002)
+- **MongoDB Atlas** for database
 - **JWT** for authentication
+- **Socket.IO** for real-time features
 
 ### AI/ML
-- **OpenAI GPT-4o** for interviews
-- **BERT** for semantic matching
+- **Groq** (LLaMA 3.3 70B) for AI-powered features (resume analysis, career advice, interview evaluation)
+- **Web Speech API** for real-time speech recognition during interviews
 - **PyPDF2** for resume parsing
 
 ---
@@ -59,32 +64,43 @@ CareerForge is an intelligent placement platform that leverages AI to streamline
 
 ```
 CareerForge/
-├── frontend/                 # React TypeScript app
+├── frontend/                      # React TypeScript app (Port 3000)
 │   ├── src/
-│   │   ├── components/       # Reusable UI components
-│   │   ├── pages/            # Page components
-│   │   ├── layouts/          # Layout components
-│   │   ├── store/            # Redux store & slices
-│   │   ├── services/         # API services
-│   │   └── hooks/            # Custom React hooks
-│   └── public/               # Static assets
+│   │   ├── components/            # Reusable UI components
+│   │   ├── pages/
+│   │   │   ├── auth/              # Login, Register, Forgot Password
+│   │   │   ├── student/           # Student dashboard, resume, interview, jobs
+│   │   │   ├── admin/             # Admin dashboard, analytics, job management
+│   │   │   └── alumni/            # Alumni dashboard, referrals, mentorship
+│   │   ├── layouts/               # Auth & Dashboard layouts
+│   │   ├── store/                 # Redux store & slices
+│   │   └── services/              # API & Socket services
+│   └── public/
 │
 ├── backend/
-│   ├── api-gateway/          # Node.js Express gateway
+│   ├── api-gateway/               # Node.js Express gateway (Port 5000)
 │   │   ├── src/
-│   │   │   ├── routes/       # API routes
-│   │   │   ├── controllers/  # Request handlers
-│   │   │   ├── models/       # MongoDB models
-│   │   │   └── middleware/   # Auth, validation, etc.
+│   │   │   ├── routes/            # API routes
+│   │   │   ├── controllers/       # Request handlers
+│   │   │   ├── models/            # MongoDB models (User, Interview, Job, Resume)
+│   │   │   └── middlewares/       # Auth, rate limiting, error handling
+│   │   ├── .env.example           # Environment template
 │   │   └── package.json
 │   │
-│   └── microservices/        # Python Flask services
-│       ├── ai-brain/         # Resume analysis & job matching
-│       └── cognitive-screener/  # Mock interview service
+│   └── microservices/
+│       ├── ai-brain/              # Resume analysis, career advice, job matching (Port 5001)
+│       │   ├── routes/            # Flask API routes
+│       │   ├── models/            # AI model logic
+│       │   ├── .env.example       # Environment template
+│       │   └── requirements.txt
+│       │
+│       └── cognitive-screener/    # Interview evaluation service (Port 5002)
+│           ├── routes/            # Flask API routes
+│           ├── models/            # Interview evaluation logic
+│           ├── .env.example       # Environment template
+│           └── requirements.txt
 │
-├── docker-compose.yml        # Docker orchestration
-├── .env.example              # Environment template
-└── README.md                 # This file
+└── README.md
 ```
 
 ---
@@ -93,11 +109,12 @@ CareerForge/
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js** (v18 or higher)
-- **Python** (v3.9 or higher)
-- **MongoDB** (local or Atlas)
-- **npm** or **yarn**
-- **pip** (Python package manager)
+- **Node.js** v18 or higher — [Download](https://nodejs.org/)
+- **Python** v3.9 or higher — [Download](https://python.org/)
+- **MongoDB Atlas** account (or local MongoDB) — [Sign up](https://www.mongodb.com/atlas)
+- **Groq API Key** — [Get one free](https://console.groq.com/)
+- **npm** (comes with Node.js)
+- **pip** (comes with Python)
 
 ---
 
@@ -110,31 +127,21 @@ git clone https://github.com/Sariga-2005/CareerForge.git
 cd CareerForge
 ```
 
-### 2. Setup Environment Variables
-
-```bash
-# Copy the example env file
-cp .env.example .env
-
-# Edit .env with your credentials
-# See Environment Variables section below
-```
-
-### 3. Install Frontend Dependencies
+### 2. Install Frontend Dependencies
 
 ```bash
 cd frontend
 npm install
 ```
 
-### 4. Install Backend (API Gateway) Dependencies
+### 3. Install API Gateway Dependencies
 
 ```bash
 cd ../backend/api-gateway
 npm install
 ```
 
-### 5. Install Python Microservices Dependencies
+### 4. Install Python Microservices Dependencies
 
 ```bash
 # AI Brain Service
@@ -148,69 +155,161 @@ pip install -r requirements.txt
 
 ---
 
-## ▶️ Running the Application
+## 🔐 Environment Variables Setup
 
-### Option 1: Run Services Individually
+Each service has its own `.env` file. Copy the `.env.example` template in each service folder and fill in your values.
 
-**Terminal 1 - Frontend:**
-```bash
-cd frontend
-npm start
-# Runs on http://localhost:3000
-```
+### API Gateway (`backend/api-gateway/.env`)
 
-**Terminal 2 - API Gateway:**
 ```bash
 cd backend/api-gateway
-npx ts-node src/server.ts
-# Runs on http://localhost:5000
+cp .env.example .env
 ```
 
-**Terminal 3 - AI Brain Service:**
+```env
+# MongoDB Atlas Connection
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/careerforge
+
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# JWT Secret (change in production)
+JWT_SECRET=your-jwt-secret-key-here
+
+# Redis Configuration (optional — app works without Redis)
+REDIS_URL=redis://localhost:6379
+
+# AI Microservices URLs
+AI_SERVICE_URL=http://localhost:5001
+COGNITIVE_SERVICE_URL=http://localhost:5002
+```
+
+### AI Brain Service (`backend/microservices/ai-brain/.env`)
+
 ```bash
 cd backend/microservices/ai-brain
-python app.py
-# Runs on http://localhost:5001
+cp .env.example .env
 ```
 
-**Terminal 4 - Cognitive Screener:**
+```env
+# MongoDB Atlas Connection
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/careerforge
+DATABASE_NAME=careerforge
+
+# Server Configuration
+PORT=5001
+DEBUG=False
+
+# Groq AI Configuration
+GROQ_API_KEY=your-groq-api-key-here
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# Redis Configuration (optional)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+```
+
+### Cognitive Screener (`backend/microservices/cognitive-screener/.env`)
+
 ```bash
 cd backend/microservices/cognitive-screener
-python app.py
-# Runs on http://localhost:5002
+cp .env.example .env
 ```
 
-### Option 2: Use Docker Compose
+```env
+# MongoDB Atlas Connection
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/careerforge
+DATABASE_NAME=careerforge
 
-```bash
-docker-compose up --build
+# Server Configuration
+PORT=5002
+DEBUG=False
+
+# Groq AI Configuration
+GROQ_API_KEY=your-groq-api-key-here
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# Redis Configuration (optional)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=1
+
+# Resume Analysis
+MAX_RESUME_SIZE_MB=5
 ```
+
+> **Note:** All three services share the same MongoDB Atlas connection string and Groq API key. You only need one Groq API key for both AI microservices.
 
 ---
 
-## 🔐 Environment Variables
+## ▶️ Running the Application
 
-Create a `.env` file in the root directory with the following:
+You need **4 separate terminals** to run all services. Start them in this order:
 
-```env
-# MongoDB
-MONGODB_URI=mongodb://localhost:27017/careerforge
+### Terminal 1 — API Gateway (start first)
 
-# JWT
-JWT_SECRET=your-super-secret-jwt-key
-JWT_EXPIRES_IN=7d
-
-# OpenAI (for AI features)
-OPENAI_API_KEY=your-openai-api-key
-
-# Server Ports
-API_GATEWAY_PORT=5000
-AI_BRAIN_PORT=5001
-COGNITIVE_SCREENER_PORT=5002
-
-# Frontend
-REACT_APP_API_URL=http://localhost:5000/api
+```bash
+cd backend/api-gateway
+npx ts-node src/server.ts
 ```
+✅ Runs on `http://localhost:5000`
+
+### Terminal 2 — AI Brain Service
+
+```bash
+cd backend/microservices/ai-brain
+python app.py
+```
+✅ Runs on `http://localhost:5001`
+
+### Terminal 3 — Cognitive Screener Service
+
+```bash
+cd backend/microservices/cognitive-screener
+python app.py
+```
+✅ Runs on `http://localhost:5002`
+
+### Terminal 4 — Frontend (start last)
+
+```bash
+cd frontend
+npm start
+```
+✅ Runs on `http://localhost:3000`
+
+> **Tip:** Once all 4 services are running, open `http://localhost:3000` in your browser (Google Chrome recommended for speech recognition support).
+
+---
+
+## 👤 User Roles & Access
+
+CareerForge supports three user roles. Each role has its own dashboard and features.
+
+| Role | Registration | Dashboard URL | Features |
+|------|-------------|---------------|----------|
+| **Student** | Register at `/register` | `/student/dashboard` | Resume upload & analysis, mock interviews, job matching, career advisor, learning roadmap |
+| **Admin** | Register with role `admin` | `/admin/dashboard` | Student management, job management, batch analytics, placement reports, system settings |
+| **Alumni** | Register with role `alumni` | `/alumni/dashboard` | Referral requests, mentorship |
+
+### Accessing the Admin Panel
+
+1. Register a new account at `http://localhost:3000/register`
+2. Select the **Admin** role during registration
+3. Log in with the admin credentials
+4. You will be redirected to `/admin/dashboard`
+
+### Admin Dashboard Features
+
+- **Dashboard** — Overview of platform statistics
+- **Batch Analytics** — Track batch-wise placement data
+- **Student Management** — View and manage student accounts
+- **Job Management** — Create, edit, and publish job postings
+- **Alumni Engagement** — Manage alumni connections
+- **Placement Reports** — Generate and view placement reports
+- **System Settings** — Configure platform settings
 
 ---
 
@@ -219,23 +318,42 @@ REACT_APP_API_URL=http://localhost:5000/api
 ### Authentication
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/auth/register` | POST | Register new user |
-| `/api/auth/login` | POST | Login user |
-| `/api/auth/me` | GET | Get current user |
+| `/api/v1/auth/register` | POST | Register new user (student/admin/alumni) |
+| `/api/v1/auth/login` | POST | Login user |
+| `/api/v1/auth/me` | GET | Get current user profile |
+| `/api/v1/auth/profile` | PUT | Update user profile |
 
 ### Resume
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/resume/upload` | POST | Upload resume |
-| `/api/resume` | GET | Get user resumes |
-| `/api/resume/:id/reanalyze` | POST | Re-analyze resume |
+| `/api/v1/resume/upload` | POST | Upload resume (PDF) |
+| `/api/v1/resume` | GET | Get user's resumes |
+| `/api/v1/resume/:id/reanalyze` | POST | Re-analyze a resume with AI |
 
 ### Interview
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/interview/start` | POST | Start mock interview |
-| `/api/interview/:id/respond` | POST | Submit response |
-| `/api/interview/history` | GET | Get interview history |
+| `/api/v1/interview` | POST | Create interview session |
+| `/api/v1/interview/:id/start` | POST | Start an interview |
+| `/api/v1/interview/:id/answer` | POST | Submit answer (with audio) |
+| `/api/v1/interview/:id/complete` | POST | Complete interview |
+| `/api/v1/interview` | GET | Get interview history |
+| `/api/v1/interview/:id` | GET | Get interview details |
+
+### Jobs
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/jobs` | GET | Get all job listings |
+| `/api/v1/jobs/:id` | GET | Get job details |
+| `/api/v1/jobs/saved` | GET | Get saved jobs |
+| `/api/v1/jobs/save` | POST | Save a job |
+| `/api/v1/jobs/unsave/:jobId` | DELETE | Unsave a job |
+
+### AI Services (via API Gateway)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/career/advice` | POST | Get AI career path advice |
+| `/api/v1/skills/roadmap` | POST | Generate learning roadmap |
 
 ---
 
@@ -273,9 +391,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- OpenAI for GPT-4o API
-- MongoDB Atlas for database hosting
-- Vercel/Netlify for frontend hosting
+- [Groq](https://groq.com/) for fast AI inference with LLaMA 3.3
+- [MongoDB Atlas](https://www.mongodb.com/atlas) for database hosting
+- [React](https://react.dev/) for the frontend framework
 
 ---
 
