@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from groq import Groq
 from typing import Dict, Any, List
 import logging
 from datetime import datetime
@@ -8,12 +8,12 @@ logger = logging.getLogger('cognitive-screener')
 
 class InterviewEvaluator:
     """
-    AI-powered interview evaluation and feedback using Google Gemini
+    AI-powered interview evaluation and feedback using Groq AI
     """
     
     def __init__(self):
-        genai.configure(api_key=Config.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(Config.GEMINI_MODEL)
+        self.client = Groq(api_key=Config.GROQ_API_KEY)
+        self.model_name = Config.GROQ_MODEL
         self.evaluation_criteria = Config.INTERVIEW_EVALUATION_CRITERIA
     
     def evaluate_interview(self, interview_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -88,12 +88,17 @@ Rate each criterion on a scale of 1-10 and provide brief feedback:
 Provide scores and 1-2 sentence feedback for each criterion.
 """
             
-            system_prompt = "You are an expert technical interviewer and evaluator."
-            full_prompt = f"{system_prompt}\n\n{prompt}"
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": "You are an expert technical interviewer and evaluator."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4096
+            )
             
-            response = self.model.generate_content(full_prompt)
-            
-            ai_feedback = response.text
+            ai_feedback = response.choices[0].message.content
             
             # For now, use heuristic scoring as fallback
             scores = self._heuristic_scoring(answer)

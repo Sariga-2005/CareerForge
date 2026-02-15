@@ -127,6 +127,19 @@ const ProfilePage: React.FC = () => {
     fetchResumeData();
   }, []);
 
+  // Sync profile when user data loads/updates
+  useEffect(() => {
+    if (user) {
+      setProfile(prev => ({
+        ...prev,
+        firstName: user.firstName || prev.firstName,
+        lastName: user.lastName || prev.lastName,
+        email: user.email || prev.email,
+        department: user.department || prev.department,
+      }));
+    }
+  }, [user]);
+
   const fetchResumeData = async () => {
     try {
       const response = await api.get('/resume');

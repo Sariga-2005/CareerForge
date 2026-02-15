@@ -34,6 +34,9 @@ interface Resume {
       personal_info?: any;
       education?: any[];
       experience?: any[];
+      projects?: any[];
+      achievements?: string[];
+      certifications?: string[];
     };
     quality_score?: {
       overall_score?: number;
@@ -370,6 +373,103 @@ const ResumeAnalysis: React.FC = () => {
               </li>
             ))}
           </ul>
+        </motion.div>
+      )}
+
+      {/* Education, Experience, Achievements Section */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        {/* Education */}
+        <div className="card-dark">
+          <h3 className="text-light font-semibold mb-4 flex items-center gap-2">
+            <AcademicCapIcon className="w-5 h-5 text-accent" />
+            Education
+          </h3>
+          {extractedData.education && extractedData.education.length > 0 ? (
+            <div className="space-y-3">
+              {extractedData.education.map((edu: any, index: number) => (
+                <div key={index} className="p-3 bg-charcoal-300/30 rounded-lg">
+                  <p className="text-light font-medium">{edu.degree || 'Degree'}</p>
+                  <p className="text-light-400 text-sm">{edu.institution || edu.field}</p>
+                  {edu.year && <p className="text-light-400 text-xs mt-1">{edu.year}</p>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-light-400 text-sm">No education found</p>
+          )}
+        </div>
+
+        {/* Work Experience */}
+        <div className="card-dark">
+          <h3 className="text-light font-semibold mb-4 flex items-center gap-2">
+            <BriefcaseIcon className="w-5 h-5 text-success" />
+            Work Experience
+          </h3>
+          {extractedData.experience && extractedData.experience.length > 0 ? (
+            <div className="space-y-3">
+              {extractedData.experience.map((exp: any, index: number) => (
+                <div key={index} className="p-3 bg-charcoal-300/30 rounded-lg">
+                  <p className="text-light font-medium">{exp.title}</p>
+                  <p className="text-success text-sm">{exp.company}</p>
+                  {exp.duration && <p className="text-light-400 text-xs mt-1">{exp.duration}</p>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-light-400 text-sm">No work experience found (projects and achievements are listed separately)</p>
+          )}
+        </div>
+
+        {/* Achievements */}
+        <div className="card-dark">
+          <h3 className="text-light font-semibold mb-4 flex items-center gap-2">
+            <SparklesIcon className="w-5 h-5 text-warning" />
+            Achievements
+          </h3>
+          {extractedData.achievements && extractedData.achievements.length > 0 ? (
+            <ul className="space-y-2">
+              {extractedData.achievements.map((achievement: string, index: number) => (
+                <li key={index} className="flex items-start gap-2 text-light-400 text-sm">
+                  <span className="text-warning">★</span>
+                  <span>{achievement}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-light-400 text-sm">No achievements found</p>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Projects */}
+      {extractedData.projects && extractedData.projects.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.47 }}
+          className="card-dark">
+          <h3 className="text-light font-semibold mb-4 flex items-center gap-2">
+            <DocumentTextIcon className="w-5 h-5 text-accent" />
+            Projects ({extractedData.projects.length})
+          </h3>
+          <div className="grid md:grid-cols-2 gap-3">
+            {extractedData.projects.map((project: any, index: number) => (
+              <div key={index} className="p-3 bg-charcoal-300/30 rounded-lg">
+                <p className="text-light font-medium">{project.name}</p>
+                {project.description && (
+                  <p className="text-light-400 text-sm mt-1 line-clamp-2">{project.description}</p>
+                )}
+                {project.technologies && project.technologies.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {project.technologies.slice(0, 4).map((tech: string, i: number) => (
+                      <span key={i} className="px-2 py-0.5 bg-accent/10 text-accent text-xs rounded">
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </motion.div>
       )}
 

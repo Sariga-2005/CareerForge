@@ -19,10 +19,15 @@ CORS(app)
 # Setup logging
 logger = setup_logger('ai-brain')
 
-# Register blueprints
-app.register_blueprint(job_matching_bp, url_prefix='/api/ai-brain/job-matching')
-app.register_blueprint(career_path_bp, url_prefix='/api/ai-brain/career-path')
-app.register_blueprint(skill_analysis_bp, url_prefix='/api/ai-brain/skill-analysis')
+# Register blueprints with simpler paths (used by API Gateway)
+app.register_blueprint(job_matching_bp, url_prefix='/job-matching')
+app.register_blueprint(career_path_bp, url_prefix='/career')
+app.register_blueprint(skill_analysis_bp, url_prefix='/skills')
+
+# Also register with full paths for direct access (unique names required)
+app.register_blueprint(job_matching_bp, url_prefix='/api/ai-brain/job-matching', name='job_matching_full')
+app.register_blueprint(career_path_bp, url_prefix='/api/ai-brain/career-path', name='career_path_full')
+app.register_blueprint(skill_analysis_bp, url_prefix='/api/ai-brain/skill-analysis', name='skill_analysis_full')
 
 @app.route('/health', methods=['GET'])
 def health_check():

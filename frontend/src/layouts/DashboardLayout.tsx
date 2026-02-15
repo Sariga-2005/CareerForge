@@ -15,6 +15,7 @@ import {
   ArrowRightOnRectangleIcon,
   BellIcon,
   Cog6ToothIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { logout } from '../store/slices/authSlice';
 import { AppDispatch, RootState } from '../store';
@@ -35,7 +36,8 @@ const studentNavItems: NavItem[] = [
   { path: '/student/resume/analysis', label: 'Resume Analysis', icon: DocumentMagnifyingGlassIcon },
   { path: '/student/interview', label: 'Mock Interview', icon: VideoCameraIcon },
   { path: '/student/interview/history', label: 'Interview History', icon: ClockIcon },
-  { path: '/student/jobs', label: 'Job Matches', icon: BriefcaseIcon },
+  { path: '/student/jobs', label: 'Placement Drives', icon: BriefcaseIcon },
+  { path: '/student/career', label: 'Career Advisor', icon: SparklesIcon },
   { path: '/student/profile', label: 'Profile', icon: UserIcon },
 ];
 

@@ -90,9 +90,51 @@ export class InterviewController {
         throw new ApiError('Interview not found', 404);
       }
 
+      // Format interview data for frontend
+      const formattedInterview = {
+        id: interview._id.toString(),
+        type: interview.type,
+        status: interview.status,
+        difficulty: interview.difficulty,
+        targetRole: interview.targetRole,
+        targetCompany: interview.targetCompany,
+        startedAt: interview.startedAt?.toISOString() || interview.createdAt.toISOString(),
+        completedAt: interview.completedAt?.toISOString(),
+        duration: interview.completedAt && interview.startedAt 
+          ? Math.floor((interview.completedAt.getTime() - interview.startedAt.getTime()) / 1000)
+          : interview.duration * 60,
+        questions: interview.questions.map((q, idx) => ({
+          id: q.id || `q-${idx}`,
+          question: q.text,
+          answer: q.response?.transcript || '',
+          duration: q.response?.duration || 0,
+          feedback: q.evaluation ? {
+            score: q.evaluation.score,
+            strengths: q.evaluation.strengths || [],
+            improvements: q.evaluation.improvements || [],
+            suggestions: q.evaluation.improvements || [],
+          } : undefined,
+        })),
+        metrics: interview.overallEvaluation ? {
+          overallScore: interview.overallEvaluation.totalScore,
+          technicalScore: interview.metrics?.technicalAccuracy || interview.overallEvaluation.totalScore,
+          communicationScore: interview.metrics?.clarityScore || Math.round(interview.overallEvaluation.totalScore * 0.9),
+          problemSolvingScore: interview.metrics?.relevanceScore || Math.round(interview.overallEvaluation.totalScore * 0.85),
+          confidenceScore: interview.metrics?.confidenceScore || Math.round(interview.overallEvaluation.totalScore * 0.8),
+        } : {
+          overallScore: 0,
+          technicalScore: 0,
+          communicationScore: 0,
+          problemSolvingScore: 0,
+          confidenceScore: 0,
+        },
+        feedback: interview.overallEvaluation?.summary || '',
+        passed: interview.overallEvaluation ? interview.overallEvaluation.totalScore >= 60 : false,
+      };
+
       res.json({
         success: true,
-        data: { interview },
+        interview: formattedInterview,
       });
     } catch (error) {
       next(error);

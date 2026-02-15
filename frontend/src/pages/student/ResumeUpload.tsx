@@ -48,15 +48,23 @@ const ResumeUpload: React.FC = () => {
           await dispatch(analyzeResume(resumeId)).unwrap();
           toast.success('Resume analyzed successfully!');
           setAnalysisStatus('complete');
-        } catch (analysisError) {
-          console.log('Auto-analysis not available, proceeding to results page');
-        }
-      }
 
-      // Navigate to analysis page
-      setTimeout(() => {
+          // Navigate only after successful analysis
+          setTimeout(() => {
+            navigate('/student/resume/analysis');
+          }, 800);
+        } catch (analysisError) {
+          console.log('Auto-analysis failed, navigating to analysis page for manual reanalyze');
+          toast.error('Initial analysis incomplete. You can reanalyze on the next page.');
+          setAnalysisStatus('complete');
+          setTimeout(() => {
+            navigate('/student/resume/analysis');
+          }, 1500);
+        }
+      } else {
+        // If no resume ID, just navigate
         navigate('/student/resume/analysis');
-      }, 500);
+      }
 
     } catch (error) {
       console.error('Upload failed:', error);
@@ -96,8 +104,8 @@ const ResumeUpload: React.FC = () => {
             <div
               {...getRootProps()}
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${isDragActive
-                  ? 'border-secondary-500 bg-secondary-500/5'
-                  : 'border-surface-400 hover:border-primary/50'
+                ? 'border-secondary-500 bg-secondary-500/5'
+                : 'border-surface-400 hover:border-primary/50'
                 }`}
             >
               <input {...getInputProps()} />

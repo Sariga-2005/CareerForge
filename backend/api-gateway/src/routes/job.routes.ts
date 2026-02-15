@@ -25,6 +25,11 @@ router.use(authenticate);
 // Get all active jobs (with filters)
 router.get('/', jobController.getJobs);
 
+// Saved jobs routes (must be before /:id to avoid conflicts)
+router.get('/saved', jobController.getSavedJobs);
+router.post('/save', jobController.saveJob);
+router.delete('/unsave/:jobId', jobController.unsaveJob);
+
 // Get job by ID
 router.get('/:id', jobController.getJobById);
 

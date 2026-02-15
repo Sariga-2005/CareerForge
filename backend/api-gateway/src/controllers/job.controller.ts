@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { Job } from '../models/Job.model';
+import { User } from '../models/User.model';
 import { ApiError } from '../middlewares/errorHandler';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { logger } from '../utils/logger';
@@ -229,6 +230,83 @@ export class JobController {
       res.json({
         success: true,
         data: { applications: [] },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Get user's saved jobs
+  getSavedJobs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = await User.findById(req.userId).select('savedJobs');
+      if (!user) {
+        throw new ApiError('User not found', 404);
+      }
+
+      res.json({
+        success: true,
+        data: { savedJobs: user.savedJobs || [] },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Save a job
+  saveJob = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { jobId } = req.body;
+      if (!jobId) {
+        throw new ApiError('Job ID is required', 400);
+      }
+
+      const user = await User.findById(req.userId);
+      if (!user) {
+        throw new ApiError('User not found', 404);
+      }
+
+      if (!user.savedJobs) {
+        user.savedJobs = [];
+      }
+
+      if (!user.savedJobs.includes(jobId)) {
+        user.savedJobs.push(jobId);
+        await user.save();
+      }
+
+      res.json({
+        success: true,
+        message: 'Job saved successfully',
+        data: { savedJobs: user.savedJobs },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Unsave a job
+  unsaveJob = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { jobId } = req.params;
+      if (!jobId) {
+        throw new ApiError('Job ID is required', 400);
+      }
+
+      const user = await User.findByIdAndUpdate(
+        req.userId,
+        { $pull: { savedJobs: jobId } },
+        { new: true }
+      ).select('savedJobs');
+
+      if (!user) {
+        throw new ApiError('User not found', 404);
+      }
+
+      res.json({
+        success: true,
+        message: 'Job removed from saved',
+        data: { savedJobs: user.savedJobs || [] },
       });
     } catch (error) {
       next(error);

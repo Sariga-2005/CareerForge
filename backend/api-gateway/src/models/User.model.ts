@@ -12,26 +12,27 @@ export interface IUser extends Document {
   phone?: string;
   isActive: boolean;
   isVerified: boolean;
-  
+
   // Student specific fields
   studentId?: string;
   department?: string;
   batch?: string;
   cgpa?: number;
   skills?: string[];
+  savedJobs?: string[];
   placementStatus?: 'not-placed' | 'placed' | 'opted-out';
-  
+
   // Alumni specific fields
   graduationYear?: number;
   currentCompany?: string;
   currentRole?: string;
   linkedIn?: string;
-  
+
   // Timestamps
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Methods
   comparePassword(candidatePassword: string): Promise<boolean>;
   toPublicJSON(): Partial<IUser>;
@@ -86,7 +87,7 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
-    
+
     // Student fields
     studentId: {
       type: String,
@@ -101,18 +102,19 @@ const userSchema = new Schema<IUser>(
       max: 10,
     },
     skills: [String],
+    savedJobs: [{ type: String, default: [] }],
     placementStatus: {
       type: String,
       enum: ['not-placed', 'placed', 'opted-out'],
       default: 'not-placed',
     },
-    
+
     // Alumni fields
     graduationYear: Number,
     currentCompany: String,
     currentRole: String,
     linkedIn: String,
-    
+
     lastLogin: Date,
   },
   {
@@ -122,15 +124,13 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Indexes
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1, department: 1 });
 userSchema.index({ batch: 1, placementStatus: 1 });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  
+
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
   next();

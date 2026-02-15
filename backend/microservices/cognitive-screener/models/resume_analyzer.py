@@ -1,5 +1,5 @@
 import re
-import google.generativeai as genai
+from groq import Groq
 from typing import Dict, Any, List
 import PyPDF2
 import io
@@ -11,12 +11,12 @@ logger = logging.getLogger('cognitive-screener')
 
 class ResumeAnalyzer:
     """
-    Advanced resume analysis using NLP and Google Gemini AI
+    Advanced resume analysis using NLP and Groq AI
     """
     
     def __init__(self):
-        genai.configure(api_key=Config.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(Config.GEMINI_MODEL)
+        self.client = Groq(api_key=Config.GROQ_API_KEY)
+        self.model_name = Config.GROQ_MODEL
     
     def analyze_resume(self, resume_text: str, job_description: str = None) -> Dict[str, Any]:
         """
@@ -55,8 +55,13 @@ class ResumeAnalyzer:
         """Extract structured data from resume using AI"""
         
         prompt = f"""
-Analyze this resume and extract ALL information in the exact JSON format below.
+Analyze this resume carefully and extract ALL information in the exact JSON format below.
 Be thorough - extract EVERY skill, technology, tool, framework, and competency mentioned.
+
+IMPORTANT DISTINCTIONS:
+- EXPERIENCE: Only include PAID WORK or INTERNSHIP positions with a company/organization name
+- PROJECTS: Academic, personal, or side projects (hackathons, class projects, hobby projects)
+- ACHIEVEMENTS: Awards, honors, certifications, competition wins, scholarships (NOT job duties)
 
 RESUME TEXT:
 {text[:4000]}
@@ -84,30 +89,35 @@ Return ONLY valid JSON (no markdown, no explanation):
     ],
     "experience": [
         {{
-            "title": "job title",
-            "company": "company name",
-            "duration": "time period",
-            "responsibilities": ["key responsibilities"],
-            "achievements": ["quantifiable achievements if any"]
+            "title": "job title - ONLY paid work/internships at companies",
+            "company": "company/organization name - NOT projects or achievements",
+            "duration": "time period (e.g., Jun 2023 - Aug 2023)",
+            "responsibilities": ["key job responsibilities"],
+            "achievements": ["work achievements within this role only"]
         }}
     ],
     "projects": [
         {{
-            "name": "project name",
+            "name": "project name - hackathons, personal, academic projects go HERE",
             "description": "brief description",
             "technologies": ["technologies used"]
         }}
     ],
     "certifications": ["list of certifications"],
-    "achievements": ["awards, honors, notable achievements"],
+    "achievements": ["awards, honors, scholarships, competition wins, publications - NOT work experience"],
     "languages": ["spoken languages"],
-    "total_experience_years": 0
+    "total_experience_years": "calculate from experience section only - 0 if no paid work"
 }}
 """
         
         try:
-            response = self.model.generate_content(prompt)
-            response_text = response.text.strip()
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=4096
+            )
+            response_text = response.choices[0].message.content.strip()
             
             # Clean up response - remove markdown code blocks if present
             if response_text.startswith('```'):
@@ -359,8 +369,13 @@ Return ONLY valid JSON array (no markdown):
 """
         
         try:
-            response = self.model.generate_content(prompt)
-            response_text = response.text.strip()
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=4096
+            )
+            response_text = response.choices[0].message.content.strip()
             
             # Clean up response
             if response_text.startswith('```'):
@@ -944,13 +959,18 @@ Provide:
 Format as JSON.
 """
             
-            system_prompt = "You are an expert resume analyst."
-            full_prompt = f"{system_prompt}\n\n{prompt}"
-            
-            response = self.model.generate_content(full_prompt)
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": "You are an expert resume analyst."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4096
+            )
             
             # Parse AI response
-            ai_analysis = response.text
+            ai_analysis = response.choices[0].message.content
             
             return {
                 'match_score': 75,  # Extract from AI response

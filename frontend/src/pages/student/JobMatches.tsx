@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -18,6 +18,7 @@ import {
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { RootState } from '../../store';
 import { toast } from 'react-hot-toast';
+import api from '../../services/api';
 
 interface Job {
   id: string;
@@ -130,6 +131,22 @@ const JobMatches: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
+
+  // Fetch saved jobs from MongoDB on mount
+  useEffect(() => {
+    const fetchSavedJobs = async () => {
+      try {
+        const response = await api.get('/jobs/saved');
+        if (response.data.success) {
+          setSavedJobs(response.data.data.savedJobs);
+        }
+      } catch (error) {
+        console.error('Failed to fetch saved jobs:', error);
+      }
+    };
+    fetchSavedJobs();
+  }, []);
 
   const userSkills = currentResume?.skills?.technical || [];
 
@@ -148,13 +165,38 @@ const JobMatches: React.FC = () => {
     return matchesSearch && matchesLocation && matchesType;
   });
 
-  const toggleSaveJob = (jobId: string) => {
-    if (savedJobs.includes(jobId)) {
+  // Get saved jobs list
+  const savedJobsList = mockJobs.filter(job => savedJobs.includes(job.id));
+
+  // Current display jobs based on active tab
+  const displayJobs = activeTab === 'saved' ? savedJobsList : filteredJobs;
+
+  const toggleSaveJob = async (jobId: string) => {
+    // Optimistic update
+    const wasSaved = savedJobs.includes(jobId);
+    if (wasSaved) {
       setSavedJobs(prev => prev.filter(id => id !== jobId));
-      toast.success('Job removed from saved');
     } else {
       setSavedJobs(prev => [...prev, jobId]);
-      toast.success('Job saved!');
+    }
+
+    try {
+      if (wasSaved) {
+        await api.delete(`/jobs/unsave/${jobId}`);
+        toast.success('Job removed from saved');
+      } else {
+        await api.post('/jobs/save', { jobId });
+        toast.success('Job saved!');
+      }
+    } catch (error) {
+      // Revert on failure
+      if (wasSaved) {
+        setSavedJobs(prev => [...prev, jobId]);
+      } else {
+        setSavedJobs(prev => prev.filter(id => id !== jobId));
+      }
+      toast.error('Failed to update saved jobs');
+      console.error('Error toggling save job:', error);
     }
   };
 
@@ -176,8 +218,37 @@ const JobMatches: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold text-text-primary">Job Search</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Placement Drive Portal</h1>
         <p className="text-text-muted mt-1">Find jobs that match your skills and career goals</p>
+      </motion.div>
+
+      {/* Tabs */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="flex gap-2 p-1 bg-surface-100 rounded-xl w-fit"
+      >
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'all'
+            ? 'bg-white text-primary shadow-md'
+            : 'text-text-muted hover:text-text-secondary'
+            }`}
+        >
+          <BriefcaseIcon className="w-4 h-4 inline mr-2" />
+          All Jobs ({filteredJobs.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('saved')}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'saved'
+            ? 'bg-white text-primary shadow-md'
+            : 'text-text-muted hover:text-text-secondary'
+            }`}
+        >
+          <BookmarkSolidIcon className="w-4 h-4 inline mr-2" />
+          Saved Jobs ({savedJobs.length})
+        </button>
       </motion.div>
 
       {/* Search & Filters */}
@@ -270,7 +341,7 @@ const JobMatches: React.FC = () => {
       {/* Results Summary */}
       <div className="flex items-center justify-between">
         <p className="text-text-muted">
-          Showing <span className="text-text-primary font-medium">{filteredJobs.length}</span> jobs
+          Showing <span className="text-text-primary font-medium">{displayJobs.length}</span> {activeTab === 'saved' ? 'saved' : ''} jobs
         </p>
         <div className="flex items-center gap-2 text-sm text-text-muted">
           <ChartBarIcon className="w-4 h-4" />
@@ -282,8 +353,8 @@ const JobMatches: React.FC = () => {
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Job Cards */}
         <div className="space-y-4">
-          {filteredJobs.length > 0 ? (
-            filteredJobs.map((job, index) => (
+          {displayJobs.length > 0 ? (
+            displayJobs.map((job, index) => (
               <motion.div
                 key={job.id}
                 initial={{ opacity: 0, y: 20 }}

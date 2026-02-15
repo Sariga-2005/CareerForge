@@ -8,6 +8,7 @@ career_path_bp = Blueprint('career_path', __name__)
 advisor = CareerAdvisor()
 
 @career_path_bp.route('/generate', methods=['POST'])
+@career_path_bp.route('/path', methods=['POST'])  # Alias for frontend compatibility
 def generate_career_path():
     """
     Generate personalized career path for a student

@@ -25,7 +25,7 @@ const mapQuestion = (q: any): InterviewQuestion => ({
 const mapInterview = (data: any): Interview => {
   const interview = data.interview || data;
   const questions = interview.questions || [];
-  
+
   return {
     id: interview._id || interview.id || '',
     userId: interview.userId || '',
@@ -58,11 +58,11 @@ export const interviewService = {
       targetRole: params.type === 'technical' ? 'Software Developer' : 'General',
     });
     const interview = createResponse.data.data?.interview || createResponse.data.interview || createResponse.data;
-    
+
     // Then start it
     const startResponse = await api.post(`/interview/${interview._id}/start`);
     const startedInterview = startResponse.data.data?.interview || startResponse.data.interview || startResponse.data;
-    
+
     return mapInterview(startedInterview);
   },
 
@@ -74,7 +74,7 @@ export const interviewService = {
   ): Promise<InterviewResponse> => {
     const formData = new FormData();
     formData.append('questionId', questionId);
-    formData.append('answer', answer);
+    formData.append('transcript', answer);
     if (audioBlob) {
       formData.append('audio', audioBlob, 'response.webm');
     }

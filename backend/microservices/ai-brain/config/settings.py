@@ -14,9 +14,9 @@ class Config:
     PORT = int(os.getenv('PORT', 5001))
     SERVICE_NAME = 'ai-brain'
     
-    # Gemini AI Config
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
+    # Groq AI Config
+    GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+    GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
     
     # Database Config
     MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb+srv://db_user:password%40123@careerforge.tkz6cww.mongodb.net/careerforge')

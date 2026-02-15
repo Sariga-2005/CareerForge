@@ -14,9 +14,9 @@ class Config:
     PORT = int(os.getenv('PORT', 5002))
     SERVICE_NAME = 'cognitive-screener'
     
-    # Gemini AI Config
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
+    # Groq AI Config
+    GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+    GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
     
     # Azure Document Intelligence (for PDF parsing)
     AZURE_DOC_INTELLIGENCE_KEY = os.getenv('AZURE_DOC_INTELLIGENCE_KEY', '')

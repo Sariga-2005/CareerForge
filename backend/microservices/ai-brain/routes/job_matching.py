@@ -112,3 +112,64 @@ def get_recommendations():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@job_matching_bp.route('/ai-analyze', methods=['POST'])
+def ai_analyze_job():
+    """
+    Use AI to analyze how well a student fits a specific job
+    """
+    try:
+        data = request.get_json()
+        
+        student_profile = data.get('student_profile')
+        job = data.get('job')
+        
+        if not student_profile or not job:
+            return jsonify({'error': 'Both student_profile and job are required'}), 400
+        
+        analysis = matcher.ai_analyze_job_fit(student_profile, job)
+        
+        return jsonify({
+            'success': analysis.get('success', False),
+            'analysis': analysis.get('analysis', {}),
+            'job_title': job.get('title', 'Unknown')
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in AI job analysis: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@job_matching_bp.route('/ai-recommend', methods=['POST'])
+def ai_recommend_jobs():
+    """
+    Get AI-powered job recommendations based on student profile
+    """
+    try:
+        data = request.get_json()
+        
+        student_profile = data.get('student_profile')
+        limit = data.get('limit', 5)
+        
+        if not student_profile:
+            return jsonify({'error': 'Student profile is required'}), 400
+        
+        result = matcher.ai_recommend_jobs(student_profile, limit)
+        
+        return jsonify({
+            'success': result.get('success', False),
+            'recommendations': result.get('recommendations', []),
+            'count': len(result.get('recommendations', []))
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in AI job recommendations: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+

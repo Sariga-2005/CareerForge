@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from groq import Groq
 from typing import List, Dict, Any
 import logging
 from config.settings import Config
@@ -7,12 +7,12 @@ logger = logging.getLogger('ai-brain')
 
 class CareerAdvisor:
     """
-    AI-powered career path advisor using Google Gemini
+    AI-powered career path advisor using Groq AI
     """
     
     def __init__(self):
-        genai.configure(api_key=Config.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(Config.GEMINI_MODEL)
+        self.client = Groq(api_key=Config.GROQ_API_KEY)
+        self.model = Config.GROQ_MODEL
     
     def generate_career_path(self, student_profile: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -21,16 +21,30 @@ class CareerAdvisor:
         try:
             prompt = self._build_career_path_prompt(student_profile)
             
-            system_prompt = "You are an expert career advisor for students and professionals."
-            full_prompt = f"{system_prompt}\n\n{prompt}"
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are an expert career advisor for students and professionals. Always respond with valid JSON only, no markdown."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4096
+            )
             
-            response = self.model.generate_content(full_prompt)
+            career_advice = response.choices[0].message.content.strip()
             
-            career_advice = response.text
+            # Clean up markdown code blocks if present
+            if career_advice.startswith('```'):
+                import re
+                career_advice = re.sub(r'^```json?\s*', '', career_advice)
+                career_advice = re.sub(r'\s*```$', '', career_advice)
+            
+            import json
+            career_path = json.loads(career_advice)
             
             return {
                 'success': True,
-                'career_path': self._parse_career_advice(career_advice),
+                'career_path': career_path,
                 'raw_advice': career_advice
             }
             
@@ -48,64 +62,63 @@ class CareerAdvisor:
         education = profile.get('education', 'Not specified')
         experience = profile.get('experience', 0)
         interests = ', '.join(profile.get('interests', []))
+        career_goals = ', '.join(profile.get('career_goals', []))
         
         prompt = f"""
-Based on the following student profile, provide a detailed 5-year career path:
+Based on the following student profile, provide a detailed 5-year career path.
 
 Education: {education}
 Skills: {skills}
 Years of Experience: {experience}
 Interests: {interests}
+Career Goals: {career_goals}
 
-Please provide:
-1. Short-term goals (0-1 year)
-2. Mid-term goals (1-3 years)
-3. Long-term goals (3-5 years)
-4. Recommended skills to learn
-5. Potential job roles and career progression
-6. Industry trends to watch
-
-Format the response in clear sections.
+Return ONLY valid JSON in this exact format (no markdown, no explanation):
+{{
+    "current_position": "their likely current role based on profile",
+    "milestones": [
+        {{
+            "year": 1,
+            "role": "Job title for year 1",
+            "skills_to_acquire": ["skill1", "skill2", "skill3"],
+            "expected_salary": "salary range in INR like 5-8 LPA",
+            "key_activities": ["activity1", "activity2", "activity3"]
+        }},
+        {{
+            "year": 2,
+            "role": "Job title for year 2",
+            "skills_to_acquire": ["skill1", "skill2"],
+            "expected_salary": "salary range",
+            "key_activities": ["activity1", "activity2"]
+        }},
+        {{
+            "year": 3,
+            "role": "Job title for year 3",
+            "skills_to_acquire": ["skill1", "skill2"],
+            "expected_salary": "salary range",
+            "key_activities": ["activity1", "activity2"]
+        }},
+        {{
+            "year": 4,
+            "role": "Job title for year 4",
+            "skills_to_acquire": ["skill1", "skill2"],
+            "expected_salary": "salary range",
+            "key_activities": ["activity1", "activity2"]
+        }},
+        {{
+            "year": 5,
+            "role": "Job title for year 5",
+            "skills_to_acquire": ["skill1", "skill2"],
+            "expected_salary": "salary range",
+            "key_activities": ["activity1", "activity2"]
+        }}
+    ],
+    "industry_recommendations": ["industry1", "industry2", "industry3"],
+    "skill_gaps": ["missing skill 1", "missing skill 2", "missing skill 3"],
+    "immediate_actions": ["action 1 to take now", "action 2 to take now", "action 3 to take now"]
+}}
 """
         return prompt
-    
-    def _parse_career_advice(self, advice: str) -> Dict[str, Any]:
-        """Parse structured career advice from AI response"""
-        
-        sections = {
-            'short_term': '',
-            'mid_term': '',
-            'long_term': '',
-            'recommended_skills': [],
-            'job_roles': [],
-            'industry_trends': []
-        }
-        
-        # Simple parsing logic - can be enhanced
-        lines = advice.split('\n')
-        current_section = None
-        
-        for line in lines:
-            line_lower = line.lower()
-            if 'short-term' in line_lower:
-                current_section = 'short_term'
-            elif 'mid-term' in line_lower:
-                current_section = 'mid_term'
-            elif 'long-term' in line_lower:
-                current_section = 'long_term'
-            elif 'skills' in line_lower:
-                current_section = 'recommended_skills'
-            elif 'job roles' in line_lower or 'career progression' in line_lower:
-                current_section = 'job_roles'
-            elif 'trends' in line_lower:
-                current_section = 'industry_trends'
-            elif current_section and line.strip():
-                if isinstance(sections[current_section], list):
-                    sections[current_section].append(line.strip())
-                else:
-                    sections[current_section] += line + '\n'
-        
-        return sections
     
     def analyze_skill_gap(self, student_skills: List[str], target_role: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -187,3 +200,10 @@ Format the response in clear sections.
             return "4-6 months with consistent effort"
         else:
             return "6-12 months with structured learning plan"
+
+if __name__ == "__main__":
+    from groq import Groq
+    client = Groq(api_key=Config.GROQ_API_KEY)
+    print("Groq client initialized successfully")
+    models = client.models.list()
+    print("Available models:", [m.id for m in models.data])

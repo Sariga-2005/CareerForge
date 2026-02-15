@@ -22,6 +22,8 @@ import interviewRoutes from './routes/interview.routes';
 import jobRoutes from './routes/job.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import alumniRoutes from './routes/alumni.routes';
+import careerRoutes from './routes/career.routes';
+import skillsRoutes from './routes/skills.routes';
 
 dotenv.config();
 
@@ -78,6 +80,8 @@ app.use('/api/v1/interview', interviewRoutes);
 app.use('/api/v1/jobs', jobRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/alumni', alumniRoutes);
+app.use('/api/v1/career', careerRoutes);
+app.use('/api/v1/skills', skillsRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

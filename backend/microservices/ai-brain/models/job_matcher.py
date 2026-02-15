@@ -3,15 +3,22 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import List, Dict, Any
 import logging
+import json
+from groq import Groq
+from config.settings import Config
 
 logger = logging.getLogger('ai-brain')
 
 class JobMatcher:
     """
-    Advanced job matching using NLP and ML techniques
+    Advanced job matching using NLP, ML techniques, and Groq AI
     """
     
     def __init__(self):
+        # Initialize Groq AI
+        self.client = Groq(api_key=Config.GROQ_API_KEY)
+        self.model = Config.GROQ_MODEL
+        
         self.vectorizer = TfidfVectorizer(
             max_features=500,
             ngram_range=(1, 2),
@@ -155,3 +162,142 @@ class JobMatcher:
         scored_jobs.sort(key=lambda x: x['match_score'], reverse=True)
         
         return scored_jobs
+
+    def ai_analyze_job_fit(self, student_profile: Dict[str, Any], job: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Use AI to provide detailed analysis of job fit with recommendations
+        """
+        try:
+            skills = ', '.join(student_profile.get('skills', []))
+            education = student_profile.get('education', 'Not specified')
+            experience = student_profile.get('experience', 0)
+            
+            job_title = job.get('title', 'Unknown Position')
+            job_company = job.get('company', 'Unknown Company')
+            job_description = job.get('description', '')
+            required_skills = ', '.join(job.get('required_skills', []))
+            
+            prompt = f"""
+Analyze this job match and provide detailed insights:
+
+CANDIDATE PROFILE:
+- Skills: {skills}
+- Education: {education}
+- Years of Experience: {experience}
+
+JOB DETAILS:
+- Title: {job_title}
+- Company: {job_company}
+- Description: {job_description[:1000]}
+- Required Skills: {required_skills}
+
+Provide analysis in JSON format:
+{{
+    "overall_fit_percentage": 0-100,
+    "strengths": ["why the candidate is a good fit"],
+    "gaps": ["skills or experience gaps"],
+    "recommendations": ["what the candidate should do to improve their chances"],
+    "interview_tips": ["specific tips for this role"],
+    "salary_expectation": "estimated salary range if applicable",
+    "growth_potential": "career growth opportunities in this role"
+}}
+"""
+            
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=4096
+            )
+            response_text = response.choices[0].message.content.strip()
+            
+            # Clean up response
+            if response_text.startswith('```'):
+                import re
+                response_text = re.sub(r'^```json?\s*', '', response_text)
+                response_text = re.sub(r'\s*```$', '', response_text)
+            
+            analysis = json.loads(response_text)
+            
+            return {
+                'success': True,
+                'analysis': analysis
+            }
+            
+        except Exception as e:
+            logger.error(f"AI job fit analysis failed: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'analysis': {
+                    'overall_fit_percentage': self.calculate_match_score(student_profile, job) * 100,
+                    'strengths': ['Unable to generate AI analysis'],
+                    'gaps': [],
+                    'recommendations': ['Complete your profile for better analysis']
+                }
+            }
+
+    def ai_recommend_jobs(self, student_profile: Dict[str, Any], limit: int = 5) -> Dict[str, Any]:
+        """
+        Use AI to recommend ideal job types and roles for the student
+        """
+        try:
+            skills = ', '.join(student_profile.get('skills', []))
+            education = student_profile.get('education', 'Not specified')
+            experience = student_profile.get('experience', 0)
+            interests = ', '.join(student_profile.get('interests', []))
+            
+            prompt = f"""
+Based on this candidate's profile, recommend the top {limit} job roles they should pursue:
+
+CANDIDATE PROFILE:
+- Skills: {skills}
+- Education: {education}
+- Years of Experience: {experience}
+- Interests: {interests}
+
+For each recommended role, provide in JSON format:
+{{
+    "recommendations": [
+        {{
+            "job_title": "specific job title",
+            "industry": "target industry",
+            "company_types": ["types of companies to target"],
+            "why_suitable": "why this role matches their profile",
+            "skills_to_highlight": ["skills they should emphasize"],
+            "skills_to_develop": ["skills they should learn"],
+            "expected_salary_range": "salary range in INR",
+            "job_search_keywords": ["keywords to use when job hunting"]
+        }}
+    ]
+}}
+"""
+            
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=4096
+            )
+            response_text = response.choices[0].message.content.strip()
+            
+            # Clean up response
+            if response_text.startswith('```'):
+                import re
+                response_text = re.sub(r'^```json?\s*', '', response_text)
+                response_text = re.sub(r'\s*```$', '', response_text)
+            
+            recommendations = json.loads(response_text)
+            
+            return {
+                'success': True,
+                'recommendations': recommendations.get('recommendations', [])
+            }
+            
+        except Exception as e:
+            logger.error(f"AI job recommendations failed: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'recommendations': []
+            }

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from './store';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from './store';
+import { getCurrentUser } from './store/slices/authSlice';
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout';
@@ -19,8 +20,10 @@ import ResumeUpload from './pages/student/ResumeUpload';
 import ResumeAnalysis from './pages/student/ResumeAnalysis';
 import MockInterview from './pages/student/MockInterview';
 import InterviewHistory from './pages/student/InterviewHistory';
+import InterviewDetails from './pages/student/InterviewDetails';
 import JobMatches from './pages/student/JobMatches';
 import ProfilePage from './pages/student/ProfilePage';
+import CareerAdvisor from './pages/student/CareerAdvisor';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -65,11 +68,20 @@ const ProtectedRoute: React.FC<{
 };
 
 const App: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { token, user } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    if (token && !user) {
+      dispatch(getCurrentUser());
+    }
+  }, [dispatch, token, user]);
+
   return (
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
-      
+
       {/* Auth Routes */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
@@ -90,7 +102,9 @@ const App: React.FC = () => {
         <Route path="/student/resume/analysis" element={<ResumeAnalysis />} />
         <Route path="/student/interview" element={<MockInterview />} />
         <Route path="/student/interview/history" element={<InterviewHistory />} />
+        <Route path="/student/interview/:id" element={<InterviewDetails />} />
         <Route path="/student/jobs" element={<JobMatches />} />
+        <Route path="/student/career" element={<CareerAdvisor />} />
         <Route path="/student/profile" element={<ProfilePage />} />
       </Route>
 
