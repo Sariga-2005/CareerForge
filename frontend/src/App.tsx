@@ -32,6 +32,7 @@ import StudentManagement from './pages/admin/StudentManagement';
 import JobManagement from './pages/admin/JobManagement';
 import AlumniEngagement from './pages/admin/AlumniEngagement';
 import PlacementReports from './pages/admin/PlacementReports';
+import PlacementPredictions from './pages/admin/PlacementPredictions';
 import SystemSettings from './pages/admin/SystemSettings';
 
 // Alumni Pages
@@ -122,6 +123,7 @@ const App: React.FC = () => {
         <Route path="/admin/jobs" element={<JobManagement />} />
         <Route path="/admin/alumni" element={<AlumniEngagement />} />
         <Route path="/admin/reports" element={<PlacementReports />} />
+        <Route path="/admin/predictions" element={<PlacementPredictions />} />
         <Route path="/admin/settings" element={<SystemSettings />} />
       </Route>
 

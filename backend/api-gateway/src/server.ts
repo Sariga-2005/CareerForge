@@ -24,6 +24,9 @@ import analyticsRoutes from './routes/analytics.routes';
 import alumniRoutes from './routes/alumni.routes';
 import careerRoutes from './routes/career.routes';
 import skillsRoutes from './routes/skills.routes';
+import alumniAdminRoutes from './routes/alumniAdmin.routes';
+import placementReportRoutes from './routes/placementReport.routes';
+import placementPredictionRoutes from './routes/placementPrediction.routes';
 
 dotenv.config();
 
@@ -82,6 +85,9 @@ app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/alumni', alumniRoutes);
 app.use('/api/v1/career', careerRoutes);
 app.use('/api/v1/skills', skillsRoutes);
+app.use('/api/v1/admin/alumni', alumniAdminRoutes);
+app.use('/api/v1/admin/reports', placementReportRoutes);
+app.use('/api/v1/admin/predictions', placementPredictionRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -104,7 +110,7 @@ const startServer = async () => {
   try {
     // Connect to databases
     await connectDatabase();
-    
+
     // Try to connect to Redis (optional)
     try {
       await connectRedis();

@@ -16,6 +16,11 @@ import {
   BellIcon,
   Cog6ToothIcon,
   SparklesIcon,
+  ChartBarIcon,
+  UsersIcon,
+  UserGroupIcon,
+  DocumentChartBarIcon,
+  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 import { logout } from '../store/slices/authSlice';
 import { AppDispatch, RootState } from '../store';
@@ -41,6 +46,35 @@ const studentNavItems: NavItem[] = [
   { path: '/student/profile', label: 'Profile', icon: UserIcon },
 ];
 
+const adminNavItems: NavItem[] = [
+  { path: '/admin/dashboard', label: 'Dashboard', icon: HomeIcon },
+  { path: '/admin/analytics', label: 'Batch Analytics', icon: ChartBarIcon },
+  { path: '/admin/students', label: 'Student Management', icon: UsersIcon },
+  { path: '/admin/jobs', label: 'Job Management', icon: BriefcaseIcon },
+  { path: '/admin/alumni', label: 'Alumni Engagement', icon: UserGroupIcon },
+  { path: '/admin/reports', label: 'Placement Reports', icon: DocumentChartBarIcon },
+  { path: '/admin/predictions', label: 'Placement Predictions', icon: ChartBarIcon },
+  { path: '/admin/settings', label: 'System Settings', icon: Cog6ToothIcon },
+];
+
+const alumniNavItems: NavItem[] = [
+  { path: '/alumni/dashboard', label: 'Dashboard', icon: HomeIcon },
+  { path: '/alumni/referrals', label: 'Referral Requests', icon: BriefcaseIcon },
+  { path: '/alumni/mentorship', label: 'Mentorship', icon: AcademicCapIcon },
+];
+
+const navItemsByRole: Record<string, NavItem[]> = {
+  student: studentNavItems,
+  admin: adminNavItems,
+  alumni: alumniNavItems,
+};
+
+const portalLabels: Record<string, string> = {
+  student: 'Student Portal',
+  admin: 'Admin Portal',
+  alumni: 'Alumni Portal',
+};
+
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -49,9 +83,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
 
+  const navItems = navItemsByRole[role] || studentNavItems;
+  const portalLabel = portalLabels[role] || 'Student Portal';
+  const homePath = `/${role}/dashboard`;
+
   // Get page title based on route
   const getPageTitle = () => {
-    const item = studentNavItems.find((item) => item.path === location.pathname);
+    const item = navItems.find((item) => item.path === location.pathname);
     return item?.label || 'Dashboard';
   };
 
@@ -79,7 +117,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
       >
         {/* Logo */}
         <div className="p-6 border-b-2 border-surface-300">
-          <Link to="/student/dashboard" className="flex items-center gap-3">
+          <Link to={homePath} className="flex items-center gap-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
               className="flex-shrink-0"
@@ -99,7 +137,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
                   transition={{ duration: 0.2 }}
                 >
                   <h1 className="font-bold text-xl text-primary">CareerForge</h1>
-                  <p className="text-xs text-text-muted">Student Portal</p>
+                  <p className="text-xs text-text-muted">{portalLabel}</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -109,7 +147,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
         {/* Navigation */}
         <nav className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-2">
-            {studentNavItems.map((item) => {
+            {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <li key={item.path}>
@@ -239,7 +277,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
               </motion.button>
 
               {/* Profile quick access */}
-              <Link to="/student/profile">
+              <Link to={`/${role}/profile`}>
                 <motion.div
                   className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary-500 flex items-center justify-center text-white font-bold text-sm shadow-lg"
                   whileHover={{ scale: 1.05 }}
@@ -276,7 +314,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
                     <img src="/logo.png" alt="CareerForge" className="w-10 h-10 object-contain" />
                     <div>
                       <h1 className="font-bold text-lg text-primary">CareerForge</h1>
-                      <p className="text-xs text-text-muted">Student Portal</p>
+                      <p className="text-xs text-text-muted">{portalLabel}</p>
                     </div>
                   </div>
                   <button
@@ -290,7 +328,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
                 {/* Mobile Nav */}
                 <nav className="flex-1 p-4 overflow-y-auto">
                   <ul className="space-y-2">
-                    {studentNavItems.map((item) => {
+                    {navItems.map((item) => {
                       const isActive = location.pathname === item.path;
                       return (
                         <li key={item.path}>

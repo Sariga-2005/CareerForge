@@ -136,6 +136,10 @@ const ProfilePage: React.FC = () => {
         lastName: user.lastName || prev.lastName,
         email: user.email || prev.email,
         department: user.department || prev.department,
+        batch: (user as any).batch || prev.batch,
+        cgpa: (user as any).cgpa ? String((user as any).cgpa) : prev.cgpa,
+        phone: (user as any).phone || prev.phone,
+        skills: (user as any).skills?.length > 0 ? (user as any).skills : prev.skills,
       }));
     }
   }, [user]);
@@ -202,11 +206,28 @@ const ProfilePage: React.FC = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Build update payload — convert cgpa from string to number
+      const updatePayload: Record<string, any> = {
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        phone: profile.phone,
+        department: profile.department,
+        batch: profile.batch,
+        skills: profile.skills,
+        linkedIn: profile.linkedin,
+      };
+
+      // Only set cgpa if it's a valid number
+      if (profile.cgpa && !isNaN(parseFloat(profile.cgpa))) {
+        updatePayload.cgpa = parseFloat(profile.cgpa);
+      }
+
+      await api.patch('/users/profile', updatePayload);
       toast.success('Profile updated successfully!');
       setIsEditing(false);
-    } catch (error) {
-      toast.error('Failed to update profile');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
