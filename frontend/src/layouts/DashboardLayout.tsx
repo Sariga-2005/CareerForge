@@ -21,6 +21,7 @@ import {
   UserGroupIcon,
   DocumentChartBarIcon,
   AcademicCapIcon,
+  MegaphoneIcon,
 } from '@heroicons/react/24/outline';
 import { logout } from '../store/slices/authSlice';
 import { AppDispatch, RootState } from '../store';
@@ -43,6 +44,7 @@ const studentNavItems: NavItem[] = [
   { path: '/student/interview/history', label: 'Interview History', icon: ClockIcon },
   { path: '/student/jobs', label: 'Placement Drives', icon: BriefcaseIcon },
   { path: '/student/career', label: 'Career Advisor', icon: SparklesIcon },
+  { path: '/student/headhunter', label: 'Headhunter', icon: MegaphoneIcon },
   { path: '/student/profile', label: 'Profile', icon: UserIcon },
 ];
 

@@ -27,7 +27,7 @@ import CareerAdvisor from './pages/student/CareerAdvisor';
 import InterviewConfigForm from './pages/student/InterviewConfigForm';
 import HardwareCheckForm from './pages/student/HardwareCheckForm';
 import InterviewDataTables from './pages/student/InterviewDataTables';
-
+import HeadhunterPage from './pages/student/HeadhunterPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -113,6 +113,7 @@ const App: React.FC = () => {
         <Route path="/student/interview/:id" element={<InterviewDetails />} />
         <Route path="/student/jobs" element={<JobMatches />} />
         <Route path="/student/career" element={<CareerAdvisor />} />
+        <Route path="/student/headhunter" element={<HeadhunterPage />} />
         <Route path="/student/profile" element={<ProfilePage />} />
       </Route>
 
