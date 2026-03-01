@@ -24,6 +24,10 @@ import InterviewDetails from './pages/student/InterviewDetails';
 import JobMatches from './pages/student/JobMatches';
 import ProfilePage from './pages/student/ProfilePage';
 import CareerAdvisor from './pages/student/CareerAdvisor';
+import InterviewConfigForm from './pages/student/InterviewConfigForm';
+import HardwareCheckForm from './pages/student/HardwareCheckForm';
+import InterviewDataTables from './pages/student/InterviewDataTables';
+
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -102,6 +106,9 @@ const App: React.FC = () => {
         <Route path="/student/resume/upload" element={<ResumeUpload />} />
         <Route path="/student/resume/analysis" element={<ResumeAnalysis />} />
         <Route path="/student/interview" element={<MockInterview />} />
+        <Route path="/student/interview/config" element={<InterviewConfigForm />} />
+        <Route path="/student/interview/hardware-check" element={<HardwareCheckForm />} />
+        <Route path="/student/interview/tables" element={<InterviewDataTables />} />
         <Route path="/student/interview/history" element={<InterviewHistory />} />
         <Route path="/student/interview/:id" element={<InterviewDetails />} />
         <Route path="/student/jobs" element={<JobMatches />} />

@@ -27,6 +27,7 @@ import {
 } from '../../store/slices/interviewSlice';
 import { socketService } from '../../services/socket/socketService';
 import toast from 'react-hot-toast';
+import InterviewModuleTabs from './InterviewModuleTabs';
 
 // Extend Window interface for Speech Recognition
 interface SpeechRecognitionEvent extends Event {
@@ -380,6 +381,7 @@ const MockInterview: React.FC = () => {
   if (!isStarted) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
+        <InterviewModuleTabs />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -420,8 +422,8 @@ const MockInterview: React.FC = () => {
             <button
               onClick={() => setInterviewType('mock')}
               className={`p-4 rounded-xl border-2 transition-all text-left ${interviewType === 'mock'
-                  ? 'border-steel bg-steel/10'
-                  : 'border-charcoal-300 hover:border-charcoal-200'
+                ? 'border-steel bg-steel/10'
+                : 'border-charcoal-300 hover:border-charcoal-200'
                 }`}
             >
               <div className="flex items-center gap-3 mb-2">
@@ -436,8 +438,8 @@ const MockInterview: React.FC = () => {
             <button
               onClick={() => setInterviewType('technical')}
               className={`p-4 rounded-xl border-2 transition-all text-left ${interviewType === 'technical'
-                  ? 'border-steel bg-steel/10'
-                  : 'border-charcoal-300 hover:border-charcoal-200'
+                ? 'border-steel bg-steel/10'
+                : 'border-charcoal-300 hover:border-charcoal-200'
                 }`}
             >
               <div className="flex items-center gap-3 mb-2">
@@ -634,7 +636,7 @@ const MockInterview: React.FC = () => {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-light-400">Confidence Level</span>
               <span className={`text-sm font-medium ${nervousnessLevel < 30 ? 'text-success' :
-                  nervousnessLevel < 60 ? 'text-warning' : 'text-error'
+                nervousnessLevel < 60 ? 'text-warning' : 'text-error'
                 }`}>
                 {nervousnessLevel < 30 ? 'Confident' :
                   nervousnessLevel < 60 ? 'Moderate' : 'Nervous'}
@@ -656,7 +658,7 @@ const MockInterview: React.FC = () => {
           <div className="card-dark">
             <div className="flex items-center gap-2 mb-3">
               <div className={`badge ${currentQuestion?.difficulty === 'easy' ? 'badge-success' :
-                  currentQuestion?.difficulty === 'medium' ? 'badge-warning' : 'badge-error'
+                currentQuestion?.difficulty === 'medium' ? 'badge-warning' : 'badge-error'
                 }`}>
                 {currentQuestion?.difficulty}
               </div>
