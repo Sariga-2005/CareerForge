@@ -90,7 +90,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
   // Get page title based on route
   const getPageTitle = () => {
     const item = navItems.find((item) => item.path === location.pathname);
-    return item?.label || 'Dashboard';
+    if (item) return item.label;
+    // Sub-routes inside Mock Interview module
+    if (location.pathname.startsWith('/student/interview')) return 'Mock Interview';
+    return 'Dashboard';
   };
 
   // Handle logout
@@ -148,7 +151,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
         <nav className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-2">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive = item.path === '/student/interview'
+                ? location.pathname.startsWith('/student/interview') && !location.pathname.includes('/history')
+                : location.pathname === item.path;
               return (
                 <li key={item.path}>
                   <Link
@@ -329,7 +334,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
                 <nav className="flex-1 p-4 overflow-y-auto">
                   <ul className="space-y-2">
                     {navItems.map((item) => {
-                      const isActive = location.pathname === item.path;
+                      const isActive = item.path === '/student/interview'
+                        ? location.pathname.startsWith('/student/interview') && !location.pathname.includes('/history')
+                        : location.pathname === item.path;
                       return (
                         <li key={item.path}>
                           <Link
