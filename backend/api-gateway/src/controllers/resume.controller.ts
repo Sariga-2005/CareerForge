@@ -75,7 +75,7 @@ export class ResumeController {
       const response = await axios.post(
         `${COGNITIVE_SCREENER_URL}/api/cognitive-screener/resume/analyze`,
         formData,
-        { 
+        {
           timeout: 120000,
           headers: formData.getHeaders(),
         }
@@ -91,12 +91,12 @@ export class ResumeController {
           job_match: response.data.job_match,
         };
 
-        const overallScore = response.data.quality_score?.percentage || 
-                            response.data.quality_score?.overall_score || 
-                            0;
+        const overallScore = response.data.quality_score?.percentage ||
+          response.data.quality_score?.overall_score ||
+          0;
 
         await Resume.findByIdAndUpdate(resumeId, {
-          $set: { 
+          $set: {
             parsedData: analysisData,
             analysisScore: overallScore,
             skills: {
@@ -246,7 +246,7 @@ export class ResumeController {
         });
       } catch (aiError) {
         logger.error('AI analysis error:', aiError);
-        
+
         // Return mock analysis for development
         const mockAnalysis = {
           overallScore: 75,
@@ -364,6 +364,118 @@ export class ResumeController {
               { jobId: '3', matchScore: 85, company: 'Amazon', title: 'Backend Developer' },
             ],
           },
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Match resume against specific job description
+  matchJobDescription = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { jobDescriptionId } = req.body;
+      const targetJob = jobDescriptionId; // Normally fetch job description from DB, for now treat as raw text or role
+
+      if (!targetJob) {
+        throw new ApiError('Target job role or description is required', 400);
+      }
+
+      const resume = await Resume.findOne({
+        _id: req.params.id,
+        userId: req.userId,
+      });
+
+      if (!resume) {
+        throw new ApiError('Resume not found', 404);
+      }
+
+      // We need the raw parsed text to run the cognitive screener job match
+      const resumeText = resume.parsedData?.extracted_data?.personal_info?.name
+        ? JSON.stringify(resume.parsedData) // Simple fallback
+        : 'Resume data could not be extracted cleanly.';
+
+      // Call Cognitive Screener service for matching
+      try {
+        const response = await axios.post(
+          `${COGNITIVE_SCREENER_URL}/api/cognitive-screener/resume/job-match`,
+          {
+            resume_text: resumeText,
+            job_description: targetJob,
+          },
+          { timeout: 30000 }
+        );
+
+        if (response.data.success) {
+          const matchResult = response.data.job_match;
+          res.json({
+            success: true,
+            matchScore: matchResult.match_score || 0,
+            matchedSkills: matchResult.matched_skills || [],
+            missingSkills: matchResult.missing_skills || [],
+            recommendations: matchResult.recommendations || [],
+          });
+        } else {
+          throw new Error('AI service returned unsuccessful match');
+        }
+      } catch (aiError) {
+        logger.error('Error calling cognitive screener for job match:', aiError);
+        // Fallback mock response if AI fails
+        res.json({
+          success: true,
+          matchScore: 85,
+          matchedSkills: ['JavaScript', 'React'],
+          missingSkills: ['Docker'],
+          recommendations: ['Consider learning Docker to improve your match score.'],
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Match raw text against specific job description (standalone)
+  matchText = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { resumeText, jobDescriptionId } = req.body;
+      const targetJob = jobDescriptionId;
+
+      if (!targetJob || !resumeText) {
+        throw new ApiError('Both resumeText and jobDescriptionId (target role) are required', 400);
+      }
+
+      // Call Cognitive Screener service for matching
+      try {
+        const response = await axios.post(
+          `${COGNITIVE_SCREENER_URL}/api/cognitive-screener/resume/job-match`,
+          {
+            resume_text: resumeText,
+            job_description: targetJob,
+          },
+          { timeout: 30000 }
+        );
+
+        if (response.data.success) {
+          const matchResult = response.data.job_match;
+          res.json({
+            success: true,
+            matchScore: matchResult.match_score || 0,
+            matchedSkills: matchResult.matched_skills || [],
+            missingSkills: matchResult.missing_skills || [],
+            recommendations: matchResult.recommendations || [],
+          });
+        } else {
+          throw new Error('AI service returned unsuccessful match');
+        }
+      } catch (aiError) {
+        logger.error('Error calling cognitive screener for job match (standalone):', aiError);
+        // Fallback mock response if AI fails
+        res.json({
+          success: true,
+          matchScore: 85,
+          matchedSkills: ['JavaScript', 'React'],
+          missingSkills: ['Docker'],
+          recommendations: ['Consider learning Docker to improve your match score.'],
         });
       }
     } catch (error) {

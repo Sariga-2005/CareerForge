@@ -116,6 +116,18 @@ export const fetchResumes = createAsyncThunk(
   }
 );
 
+export const deleteResume = createAsyncThunk(
+  'resume/delete',
+  async (resumeId: string, { rejectWithValue }) => {
+    try {
+      await resumeService.deleteResume(resumeId);
+      return resumeId;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete resume');
+    }
+  }
+);
+
 export const fetchResumeAnalysis = createAsyncThunk(
   'resume/fetchAnalysis',
   async (resumeId: string, { rejectWithValue }) => {
@@ -204,6 +216,13 @@ const resumeSlice = createSlice({
         // Set the most recent (first) resume as current if we don't have one
         if (!state.currentResume && action.payload.length > 0) {
           state.currentResume = action.payload[0];
+        }
+      })
+      // Delete Resume
+      .addCase(deleteResume.fulfilled, (state, action) => {
+        state.resumes = state.resumes.filter((r) => r._id !== action.payload && r.id !== action.payload);
+        if (state.currentResume && (state.currentResume._id === action.payload || state.currentResume.id === action.payload)) {
+          state.currentResume = state.resumes.length > 0 ? state.resumes[0] : null;
         }
       })
       // Fetch Analysis

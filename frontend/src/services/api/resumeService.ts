@@ -41,6 +41,19 @@ export const resumeService = {
     return response.data;
   },
 
+  matchTextWithJD: async (
+    resumeText: string,
+    jobDescriptionId: string
+  ): Promise<{
+    matchScore: number;
+    matchedSkills: string[];
+    missingSkills: string[];
+    recommendations: string[];
+  }> => {
+    const response = await api.post(`/resume/match-text`, { resumeText, jobDescriptionId });
+    return response.data;
+  },
+
   deleteResume: async (resumeId: string): Promise<void> => {
     await api.delete(`/resume/${resumeId}`);
   },
