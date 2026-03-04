@@ -70,6 +70,20 @@ router.get(
   resumeController.getJobMatches
 );
 
+// Match resume against specific job description
+router.post(
+  '/:id/match',
+  aiRateLimiter,
+  resumeController.matchJobDescription
+);
+
+// Match raw text against specific job description (standalone)
+router.post(
+  '/match-text',
+  aiRateLimiter,
+  resumeController.matchText
+);
+
 // Admin routes
 router.get(
   '/admin/all',
