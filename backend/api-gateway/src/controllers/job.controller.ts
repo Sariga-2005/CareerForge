@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { Job } from '../models/Job.model';
+import { JobApplication } from '../models/JobApplication.model';
 import { User } from '../models/User.model';
 import { ApiError } from '../middlewares/errorHandler';
 import { AuthRequest } from '../middlewares/auth.middleware';
@@ -89,10 +90,32 @@ export class JobController {
   // Apply for job
   applyForJob = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement job application model and logic
-      res.json({
+      const jobId = req.params.id;
+      const userId = req.userId;
+
+      const job = await Job.findById(jobId);
+      if (!job) throw new ApiError('Job not found', 404);
+      if (job.status !== 'active') throw new ApiError('This job is no longer accepting applications', 400);
+
+      const existing = await JobApplication.findOne({ userId, jobId });
+      if (existing) throw new ApiError('You have already applied for this job', 400);
+
+      const application = await JobApplication.create({
+        userId,
+        jobId,
+        coverLetter: req.body.coverLetter || '',
+        resumeId: req.body.resumeId,
+      });
+
+      job.stats.applications += 1;
+      await job.save();
+
+      logger.info(`User ${userId} applied for job ${jobId}`);
+
+      res.status(201).json({
         success: true,
         message: 'Application submitted successfully',
+        data: { application },
       });
     } catch (error) {
       next(error);
@@ -102,28 +125,57 @@ export class JobController {
   // Get application status
   getApplicationStatus = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement
+      const application = await JobApplication.findOne({
+        userId: req.userId,
+        jobId: req.params.id,
+      });
+
       res.json({
         success: true,
-        data: { applied: false, status: null },
+        data: {
+          applied: !!application,
+          status: application?.status || null,
+          appliedAt: application?.appliedAt || null,
+        },
       });
     } catch (error) {
       next(error);
     }
   };
 
-  // Get recommended jobs
+  // Get recommended jobs with match scores
   getRecommendedJobs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement AI-based job recommendations
+      const user = await User.findById(req.userId).select('skills department');
       const jobs = await Job.find({ status: 'active' })
         .select('-embedding')
-        .limit(10)
+        .limit(20)
         .sort({ createdAt: -1 });
+
+      const userSkills: string[] = (user as any)?.skills || [];
+
+      const jobsWithScore = jobs.map((job) => {
+        const jobObj = job.toObject();
+        // Compute a simple skill-overlap match score
+        const required = job.requiredSkills || [];
+        const preferred = job.preferredSkills || [];
+        const allJobSkills = [...required, ...preferred];
+        if (allJobSkills.length === 0 || userSkills.length === 0) {
+          return { ...jobObj, matchScore: 50 };
+        }
+        const matched = allJobSkills.filter((s) =>
+          userSkills.some((us) => us.toLowerCase() === s.toLowerCase())
+        );
+        const score = Math.round((matched.length / allJobSkills.length) * 100);
+        return { ...jobObj, matchScore: Math.max(score, 20) };
+      });
+
+      // Sort by match score descending
+      jobsWithScore.sort((a, b) => b.matchScore - a.matchScore);
 
       res.json({
         success: true,
-        data: { jobs },
+        data: { jobs: jobsWithScore },
       });
     } catch (error) {
       next(error);
@@ -226,10 +278,13 @@ export class JobController {
   // Admin: Get job applications
   getJobApplications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement
+      const applications = await JobApplication.find({ jobId: req.params.id })
+        .populate('userId', 'firstName lastName email department')
+        .sort({ appliedAt: -1 });
+
       res.json({
         success: true,
-        data: { applications: [] },
+        data: { applications },
       });
     } catch (error) {
       next(error);

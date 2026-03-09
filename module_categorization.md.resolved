@@ -1,0 +1,186 @@
+# CareerForge — Module-Wise Categorization
+
+---
+
+## Module 1: The Cognitive Screener (Resume Engine)
+
+### Master Form (1)
+| Form | Insert | Delete | Update | Search | Display |
+|------|--------|--------|--------|--------|---------|
+| Student Profile | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+### Transaction Forms (3)
+| Form | Insert | Delete | Update | Search | Display |
+|------|--------|--------|--------|--------|---------|
+| Resume Upload | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Resume Analysis | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Career Path Generation | ✅ | — | ✅ | ✅ | ✅ |
+
+### Master Tables (2)
+| Table | Purpose |
+|-------|---------|
+| Users | Stores user credentials and roles |
+| Job_Descriptions | Market job roles and requirements |
+
+### Transaction Tables (3)
+| Table | Purpose |
+|-------|---------|
+| Resumes | Stores resume file metadata |
+| Resume_Parsed_Data | Extracted skills, education, experience |
+| Resume_Scores | AI-generated resume and job-fit scores |
+
+### Report
+Resume Analysis Report — AI-generated quality score, ATS compatibility, extracted skills, and improvement suggestions
+
+### Visualization
+Resume Score Breakdown — Overall score progress bar + expandable category-wise score cards
+
+### API
+[resume.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/resume.routes.ts) — POST `/upload`, GET `/`, GET [/:id](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/job.routes.ts#9-21), POST `/:id/reanalyze`, DELETE [/:id](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/job.routes.ts#9-21), POST `/:id/analyze`, GET `/:id/analysis`, GET `/:id/skill-gaps`, GET `/:id/job-matches`
+[career.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/career.routes.ts) — Career path and skill roadmap generation
+[user.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/user.routes.ts) — Profile GET/PUT
+
+### Testing
+Frontend: Jest + React Testing Library | Backend: pytest + pytest-asyncio (ai-brain microservice)
+
+---
+
+## Module 2: The Adaptive Interviewer (Mock Coach)
+
+### Master Form (1)
+| Form | Insert | Delete | Update | Search | Display |
+|------|--------|--------|--------|--------|---------|
+| Interview Configuration | ✅ | ✅ | ✅ | ✅ | ✅ (DataGrid) |
+
+### Transaction Forms (3)
+| Form | Insert | Delete | Update | Search | Display |
+|------|--------|--------|--------|--------|---------|
+| Hardware Check | ✅ | ✅ | ✅ | ✅ | ✅ (DataGrid) |
+| Mock Interview Session | ✅ | ✅ (cancel) | ✅ | ✅ | ✅ |
+| Interview Evaluation | ✅ | — | ✅ | ✅ | ✅ |
+
+### Master Table (1)
+| Table | Purpose |
+|-------|---------|
+| Interviews | Interview session details |
+
+### Transaction Tables (4)
+| Table | Purpose |
+|-------|---------|
+| Interview_Questions | AI-generated questions |
+| Interview_Responses | Student answers (text/audio) |
+| Interview_Scores | Confidence, fluency, technical score |
+| Speech_Transcripts | Whisper AI transcription results |
+
+### Report
+Interview Performance Report — Evaluation with confidence, clarity, relevance, technical accuracy, grade, and transcript
+
+### Visualization
+Interview Score Cards — Per-interview score display with color-coded percentage and status badges
+
+### API
+[interview.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/interview.routes.ts) — POST `/`, GET `/`, GET [/:id](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/job.routes.ts#9-21), POST `/:id/start`, GET `/:id/next-question`, POST `/:id/answer`, POST `/:id/complete`, GET `/:id/evaluation`, POST `/:id/cancel`, GET `/:id/metrics`
+
+### Testing
+Frontend: Jest + React Testing Library | Backend: pytest + pytest-asyncio (cognitive-screener microservice)
+
+---
+
+## Module 3: The Autonomous Headhunter (Agentic Core)
+
+### Master Form (1)
+| Form | Insert | Delete | Update | Search | Display |
+|------|--------|--------|--------|--------|---------|
+| Outreach Preferences | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+### Transaction Forms (3)
+| Form | Insert | Delete | Update | Search | Display |
+|------|--------|--------|--------|--------|---------|
+| Email Signature & Template | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Job Save/Bookmark | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Job Application | ✅ | — | ✅ | ✅ | ✅ |
+
+### Master Table (1)
+| Table | Purpose |
+|-------|---------|
+| Alumni | Alumni profiles and company details |
+
+### Transaction Tables (4)
+| Table | Purpose |
+|-------|---------|
+| Outreach_Requests | Student outreach eligibility |
+| Email_Logs | Sent email records |
+| Alumni_Responses | Replies and referral confirmations |
+| Referral_Status | Tracks referral outcomes |
+
+### Report
+Job Match Report — Skill-based job matching with match score %, requirements comparison, and saved jobs tracking
+
+### Visualization
+Job Match Score Badges — Color-coded match % badges (green ≥85%, yellow ≥70%, red <70%) per job listing
+
+### API
+[headhunter.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/headhunter.routes.ts) — GET/POST/PUT/DELETE `/campaigns`, GET/POST/PUT/DELETE `/templates`
+[job.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/job.routes.ts) — GET `/`, GET [/:id](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/job.routes.ts#9-21), POST `/:id/apply`, GET `/saved`, POST `/save`, DELETE `/unsave/:jobId`, GET `/user/recommended`
+
+### Testing
+Frontend: Jest + React Testing Library | Backend: Jest + ts-jest (API Gateway)
+
+---
+
+## Module 4: The Analytics Manager (Admin Dashboard)
+
+### Master Form (1)
+| Form | Insert | Delete | Update | Search | Display |
+|------|--------|--------|--------|--------|---------|
+| Alumni Database Update | ✅ | ✅ | ✅ | ✅ (by email) | ✅ |
+
+### Transaction Forms (3)
+| Form | Insert | Delete | Update | Search | Display |
+|------|--------|--------|--------|--------|---------|
+| Report Generation Filter | ✅ | ✅ | ✅ | ✅ (by ID/title) | ✅ |
+| Placement Prediction Generation | ✅ | ✅ | ✅ | ✅ (by email/name) | ✅ |
+| User Registration | ✅ | — | ✅ | ✅ | ✅ |
+
+### Master Table (1)
+| Table | Purpose |
+|-------|---------|
+| Student_Readiness | Combined readiness score |
+
+### Transaction Tables (4)
+| Table | Purpose |
+|-------|---------|
+| Skill_Gap_Reports | Missing skills and recommendations |
+| Placement_Predictions | Probability estimates |
+| Batch_Statistics | Department & batch analytics |
+| Dashboard_Metrics | Cached data for fast dashboard loading |
+
+### Report
+Placement Predictions Report — AI-calculated placement probability per student with risk levels, estimated package, and recommendations
+
+### Visualization
+Admin Dashboard Charts — Placement Trend (Line), Department Distribution (Doughnut), Skill Gap (Bar), Stat Cards, Readiness Progress Bars
+
+### API
+[analytics.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/analytics.routes.ts) — GET `/admin/dashboard`, `/admin/placement-stats`, `/admin/batch-analytics`, `/admin/department-analytics`, `/admin/skill-gap-report`, `/admin/company-analytics`, `/admin/trends`, `/reports/placement`, `/reports/batch/:batch`
+[placementReport.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/placementReport.routes.ts) — Full CRUD for placement reports
+[placementPrediction.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/placementPrediction.routes.ts) — Full CRUD for placement predictions
+[alumniAdmin.routes.ts](file:///c:/Users/naren/OneDrive/Desktop/SEM-6/FFS%27/CareerForge/backend/api-gateway/src/routes/alumniAdmin.routes.ts) — Full CRUD for alumni records
+
+### Testing
+Frontend: Jest + React Testing Library | Backend: Jest + ts-jest (API Gateway)
+
+---
+
+## Summary
+
+| Metric | Module 1 | Module 2 | Module 3 | Module 4 | **Total** |
+|--------|----------|----------|----------|----------|-----------|
+| Master Forms | 1 | 1 | 1 | 1 | **4** |
+| Transaction Forms | 3 | 3 | 3 | 3 | **12** |
+| Master Tables | 2 | 1 | 1 | 1 | **5** |
+| Transaction Tables | 3 | 4 | 4 | 4 | **15** |
+| Reports | 1 | 1 | 1 | 1 | **4** |
+| Visualizations | 1 | 1 | 1 | 1 | **4** |
+| APIs | 3 routes | 1 route | 2 routes | 4 routes | **10 route files** |
+| Testing | Jest + pytest | Jest + pytest | Jest + ts-jest | Jest + ts-jest | **3 frameworks** |

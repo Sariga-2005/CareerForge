@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BriefcaseIcon,
@@ -14,13 +14,14 @@ import {
   ArrowTopRightOnSquareIcon,
   XMarkIcon,
   CheckBadgeIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
-import { RootState } from '../../store';
+import { RootState, AppDispatch } from '../../store';
+import { fetchRecommendedJobs, fetchSavedJobs, saveJob, unsaveJob, applyForJob } from '../../store/slices/jobSlice';
 import { toast } from 'react-hot-toast';
-import api from '../../services/api';
 
-interface Job {
+interface JobDisplay {
   id: string;
   title: string;
   company: string;
@@ -36,7 +37,7 @@ interface Job {
 }
 
 // Mock job data with Indian companies
-const mockJobs: Job[] = [
+const mockJobs: JobDisplay[] = [
   {
     id: '1',
     title: 'Software Engineer',
@@ -124,34 +125,56 @@ const mockJobs: Job[] = [
 ];
 
 const JobMatches: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const { currentResume } = useSelector((state: RootState) => state.resume);
+  const { recommendedJobs, savedJobIds } = useSelector((state: RootState) => state.jobs);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [savedJobs, setSavedJobs] = useState<string[]>([]);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobDisplay | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
 
-  // Fetch saved jobs from MongoDB on mount
+  // Apply Modal state
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [applyJobId, setApplyJobId] = useState<string | null>(null);
+  const [coverLetter, setCoverLetter] = useState('');
+  const [isApplying, setIsApplying] = useState(false);
+
+  // Fetch recommended jobs and saved jobs on mount
   useEffect(() => {
-    const fetchSavedJobs = async () => {
-      try {
-        const response = await api.get('/jobs/saved');
-        if (response.data.success) {
-          setSavedJobs(response.data.data.savedJobs);
-        }
-      } catch (error) {
-        console.error('Failed to fetch saved jobs:', error);
-      }
-    };
-    fetchSavedJobs();
-  }, []);
+    dispatch(fetchRecommendedJobs());
+    dispatch(fetchSavedJobs());
+  }, [dispatch]);
 
   const userSkills = currentResume?.skills?.technical || [];
 
+  // Transform API jobs to display format, fallback to mock data
+  const mapApiJobs = (): JobDisplay[] => {
+    if (recommendedJobs.length > 0) {
+      return recommendedJobs.map((j: any) => ({
+        id: j._id,
+        title: j.title,
+        company: j.companyName,
+        location: j.location,
+        type: j.type === 'full-time' ? 'Full-time' : j.type === 'part-time' ? 'Part-time' : j.type === 'internship' ? 'Internship' : 'Contract',
+        salary: j.salary ? `₹${j.salary.min / 100000}-${j.salary.max / 100000} LPA` : 'Not disclosed',
+        postedAt: j.createdAt ? new Date(j.createdAt).toLocaleDateString() : 'Recently',
+        description: j.description,
+        requirements: j.requirements || [],
+        skills: j.requiredSkills || [],
+        matchScore: j.matchScore,
+        logo: j.companyLogo || j.companyName?.[0] || '?',
+      }));
+    }
+    return mockJobs;
+  };
+
+  const allJobs = mapApiJobs();
+
   // Filter jobs
-  const filteredJobs = mockJobs.filter(job => {
+  const filteredJobs = allJobs.filter(job => {
     const matchesSearch = searchQuery === '' ||
       job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -166,37 +189,43 @@ const JobMatches: React.FC = () => {
   });
 
   // Get saved jobs list
-  const savedJobsList = mockJobs.filter(job => savedJobs.includes(job.id));
+  const savedJobsList = allJobs.filter(job => savedJobIds.includes(job.id));
 
   // Current display jobs based on active tab
   const displayJobs = activeTab === 'saved' ? savedJobsList : filteredJobs;
 
   const toggleSaveJob = async (jobId: string) => {
-    // Optimistic update
-    const wasSaved = savedJobs.includes(jobId);
-    if (wasSaved) {
-      setSavedJobs(prev => prev.filter(id => id !== jobId));
-    } else {
-      setSavedJobs(prev => [...prev, jobId]);
-    }
-
+    const wasSaved = savedJobIds.includes(jobId);
     try {
       if (wasSaved) {
-        await api.delete(`/jobs/unsave/${jobId}`);
+        await dispatch(unsaveJob(jobId)).unwrap();
         toast.success('Job removed from saved');
       } else {
-        await api.post('/jobs/save', { jobId });
+        await dispatch(saveJob(jobId)).unwrap();
         toast.success('Job saved!');
       }
-    } catch (error) {
-      // Revert on failure
-      if (wasSaved) {
-        setSavedJobs(prev => [...prev, jobId]);
-      } else {
-        setSavedJobs(prev => prev.filter(id => id !== jobId));
-      }
+    } catch {
       toast.error('Failed to update saved jobs');
-      console.error('Error toggling save job:', error);
+    }
+  };
+
+  const handleApplyClick = (jobId: string) => {
+    setApplyJobId(jobId);
+    setCoverLetter('');
+    setShowApplyModal(true);
+  };
+
+  const handleSubmitApplication = async () => {
+    if (!applyJobId) return;
+    setIsApplying(true);
+    try {
+      await dispatch(applyForJob({ jobId: applyJobId, data: { coverLetter } })).unwrap();
+      toast.success('Application submitted successfully!');
+      setShowApplyModal(false);
+    } catch (err: any) {
+      toast.error(err || 'Failed to apply');
+    } finally {
+      setIsApplying(false);
     }
   };
 
@@ -247,7 +276,7 @@ const JobMatches: React.FC = () => {
             }`}
         >
           <BookmarkSolidIcon className="w-4 h-4 inline mr-2" />
-          Saved Jobs ({savedJobs.length})
+          Saved Jobs ({savedJobIds.length})
         </button>
       </motion.div>
 
@@ -380,7 +409,7 @@ const JobMatches: React.FC = () => {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                   >
-                    {savedJobs.includes(job.id) ? (
+                    {savedJobIds.includes(job.id) ? (
                       <BookmarkSolidIcon className="w-5 h-5 text-primary" />
                     ) : (
                       <BookmarkIcon className="w-5 h-5 text-text-light" />
@@ -545,7 +574,7 @@ const JobMatches: React.FC = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {savedJobs.includes(selectedJob.id) ? (
+                    {savedJobIds.includes(selectedJob.id) ? (
                       <>
                         <BookmarkSolidIcon className="w-5 h-5" />
                         Saved
@@ -559,6 +588,7 @@ const JobMatches: React.FC = () => {
                   </motion.button>
                   <motion.button
                     className="btn-primary flex-1"
+                    onClick={() => handleApplyClick(selectedJob.id)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -582,6 +612,54 @@ const JobMatches: React.FC = () => {
           </AnimatePresence>
         </div>
       </div>
+      {/* Apply Modal */}
+      <AnimatePresence>
+        {showApplyModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-text-primary">Apply for this Job</h4>
+                <button onClick={() => setShowApplyModal(false)} className="p-2 rounded-lg hover:bg-surface-200">
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-text-muted mb-2 block">Cover Letter (optional)</label>
+                  <textarea
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                    placeholder="Tell the employer why you're a great fit..."
+                    className="input w-full resize-none"
+                    rows={5}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button onClick={() => setShowApplyModal(false)} className="btn-secondary flex-1">Cancel</button>
+                <motion.button
+                  onClick={handleSubmitApplication}
+                  disabled={isApplying}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <CheckCircleIcon className="w-5 h-5" />
+                  {isApplying ? 'Submitting...' : 'Submit Application'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

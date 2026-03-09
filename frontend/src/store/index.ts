@@ -7,6 +7,8 @@ import uiReducer from './slices/uiSlice';
 import alumniAdminReducer from './slices/alumniAdminSlice';
 import placementReportReducer from './slices/placementReportSlice';
 import placementPredictionReducer from './slices/placementPredictionSlice';
+import headhunterReducer from './slices/headhunterSlice';
+import jobReducer from './slices/jobSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +20,8 @@ export const store = configureStore({
     alumniAdmin: alumniAdminReducer,
     placementReport: placementReportReducer,
     placementPrediction: placementPredictionReducer,
+    headhunter: headhunterReducer,
+    jobs: jobReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

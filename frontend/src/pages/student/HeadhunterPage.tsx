@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import {
@@ -12,7 +13,11 @@ import {
     CheckCircleIcon,
     ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import api from '../../services/api';
+import { RootState, AppDispatch } from '../../store';
+import {
+    fetchCampaigns, addCampaign, editCampaign, removeCampaign, executeCampaign,
+    fetchTemplates, addTemplate, editTemplate, removeTemplate,
+} from '../../store/slices/headhunterSlice';
 
 /* ═══════════════════ TYPES ═══════════════════ */
 interface Campaign {
@@ -97,23 +102,21 @@ const ConfirmDialog: React.FC<{
 
 /* ═══════════════════ MAIN PAGE ═══════════════════ */
 const HeadhunterPage: React.FC = () => {
+    const dispatch = useDispatch<AppDispatch>();
+    const { campaigns, templates, isLoading } = useSelector((state: RootState) => state.headhunter);
     const [activeTab, setActiveTab] = useState<'campaigns' | 'templates'>('campaigns');
 
-    /* campaigns state */
-    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+    /* campaigns local UI state */
     const [campSearch, setCampSearch] = useState('');
     const [campForm, setCampForm] = useState<Campaign>(emptyCampaign);
     const [editingCampId, setEditingCampId] = useState<string | null>(null);
     const [showCampForm, setShowCampForm] = useState(false);
-    const [campLoading, setCampLoading] = useState(false);
 
-    /* templates state */
-    const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+    /* templates local UI state */
     const [tmplSearch, setTmplSearch] = useState('');
     const [tmplForm, setTmplForm] = useState<EmailTemplate>(emptyTemplate);
     const [editingTmplId, setEditingTmplId] = useState<string | null>(null);
     const [showTmplForm, setShowTmplForm] = useState(false);
-    const [tmplLoading, setTmplLoading] = useState(false);
 
     /* confirm dialog */
     const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; onOk: () => void; variant?: 'danger' | 'primary' }>({
@@ -122,21 +125,16 @@ const HeadhunterPage: React.FC = () => {
 
     const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
 
+    // Fetch data on mount
+    useEffect(() => {
+        dispatch(fetchCampaigns(undefined));
+        dispatch(fetchTemplates(undefined));
+    }, [dispatch]);
+
     /* ─── CAMPAIGN CRUD ─── */
-    const fetchCampaigns = useCallback(async (search = '') => {
-        try {
-            setCampLoading(true);
-            const res = await api.get(`/headhunter/campaigns${search ? `?search=${encodeURIComponent(search)}` : ''}`);
-            setCampaigns(res.data.data || []);
-        } catch { toast.error('Failed to load campaigns'); }
-        finally { setCampLoading(false); }
-    }, []);
-
-    useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
-
     const handleCampSearchChange = (val: string) => {
         setCampSearch(val);
-        fetchCampaigns(val);
+        dispatch(fetchCampaigns(val));
     };
 
     const openNewCampaign = () => { setCampForm(emptyCampaign); setEditingCampId(null); setShowCampForm(true); };
@@ -160,20 +158,20 @@ const HeadhunterPage: React.FC = () => {
                 closeConfirm();
                 try {
                     if (editingCampId) {
-                        await api.put(`/headhunter/campaigns/${editingCampId}`, campForm);
+                        await dispatch(editCampaign({ id: editingCampId, data: campForm })).unwrap();
                         toast.success('Campaign updated!');
                     } else {
-                        await api.post('/headhunter/campaigns', campForm);
+                        await dispatch(addCampaign(campForm)).unwrap();
                         toast.success('Campaign created!');
                     }
                     setShowCampForm(false);
-                    fetchCampaigns(campSearch);
+                    dispatch(fetchCampaigns(campSearch || undefined));
                 } catch { toast.error('Failed to save campaign'); }
             },
         });
     };
 
-    const deleteCampaign = (c: Campaign) => {
+    const deleteCampaignItem = (c: Campaign) => {
         setConfirm({
             open: true, variant: 'danger',
             title: 'Delete Campaign',
@@ -181,29 +179,34 @@ const HeadhunterPage: React.FC = () => {
             onOk: async () => {
                 closeConfirm();
                 try {
-                    await api.delete(`/headhunter/campaigns/${c._id}`);
+                    await dispatch(removeCampaign(c._id!)).unwrap();
                     toast.success('Campaign deleted!');
-                    fetchCampaigns(campSearch);
                 } catch { toast.error('Failed to delete campaign'); }
             },
         });
     };
 
+    const runCampaignAction = (c: Campaign) => {
+        setConfirm({
+            open: true, variant: 'primary',
+            title: 'Run Campaign',
+            message: `Are you sure you want to run "${c.campaignName}"? This will send outreach emails to matching alumni.`,
+            onOk: async () => {
+                closeConfirm();
+                try {
+                    const result = await dispatch(executeCampaign({ id: c._id! })).unwrap();
+                    toast.success(result.message || `Campaign executed! ${result.data?.emailsSent || 0} emails sent.`);
+                } catch (err: any) {
+                    toast.error(typeof err === 'string' ? err : 'Failed to run campaign');
+                }
+            },
+        });
+    };
+
     /* ─── TEMPLATE CRUD ─── */
-    const fetchTemplates = useCallback(async (search = '') => {
-        try {
-            setTmplLoading(true);
-            const res = await api.get(`/headhunter/templates${search ? `?search=${encodeURIComponent(search)}` : ''}`);
-            setTemplates(res.data.data || []);
-        } catch { toast.error('Failed to load templates'); }
-        finally { setTmplLoading(false); }
-    }, []);
-
-    useEffect(() => { fetchTemplates(); }, [fetchTemplates]);
-
     const handleTmplSearchChange = (val: string) => {
         setTmplSearch(val);
-        fetchTemplates(val);
+        dispatch(fetchTemplates(val));
     };
 
     const openNewTemplate = () => { setTmplForm(emptyTemplate); setEditingTmplId(null); setShowTmplForm(true); };
@@ -227,20 +230,20 @@ const HeadhunterPage: React.FC = () => {
                 closeConfirm();
                 try {
                     if (editingTmplId) {
-                        await api.put(`/headhunter/templates/${editingTmplId}`, tmplForm);
+                        await dispatch(editTemplate({ id: editingTmplId, data: tmplForm })).unwrap();
                         toast.success('Template updated!');
                     } else {
-                        await api.post('/headhunter/templates', tmplForm);
+                        await dispatch(addTemplate(tmplForm)).unwrap();
                         toast.success('Template created!');
                     }
                     setShowTmplForm(false);
-                    fetchTemplates(tmplSearch);
+                    dispatch(fetchTemplates(tmplSearch || undefined));
                 } catch { toast.error('Failed to save template'); }
             },
         });
     };
 
-    const deleteTemplate = (t: EmailTemplate) => {
+    const deleteTemplateItem = (t: EmailTemplate) => {
         setConfirm({
             open: true, variant: 'danger',
             title: 'Delete Template',
@@ -248,9 +251,8 @@ const HeadhunterPage: React.FC = () => {
             onOk: async () => {
                 closeConfirm();
                 try {
-                    await api.delete(`/headhunter/templates/${t._id}`);
+                    await dispatch(removeTemplate(t._id!)).unwrap();
                     toast.success('Template deleted!');
-                    fetchTemplates(tmplSearch);
                 } catch { toast.error('Failed to delete template'); }
             },
         });
@@ -336,7 +338,7 @@ const HeadhunterPage: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {campLoading ? (
+                                    {isLoading ? (
                                         <tr><td colSpan={8} className="text-center py-12 text-text-muted">Loading...</td></tr>
                                     ) : campaigns.length === 0 ? (
                                         <tr><td colSpan={8} className="text-center py-12">
@@ -362,10 +364,13 @@ const HeadhunterPage: React.FC = () => {
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <div className="flex items-center justify-center gap-1">
+                                                    <button onClick={() => runCampaignAction(c)} className="p-2 rounded-lg hover:bg-success/10 text-text-muted hover:text-success transition-colors" title="Run Campaign">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
+                                                    </button>
                                                     <button onClick={() => openEditCampaign(c)} className="p-2 rounded-lg hover:bg-primary/10 text-text-muted hover:text-primary transition-colors" title="Edit">
                                                         <PencilIcon className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => deleteCampaign(c)} className="p-2 rounded-lg hover:bg-error/10 text-text-muted hover:text-error transition-colors" title="Delete">
+                                                    <button onClick={() => deleteCampaignItem(c)} className="p-2 rounded-lg hover:bg-error/10 text-text-muted hover:text-error transition-colors" title="Delete">
                                                         <TrashIcon className="w-4 h-4" />
                                                     </button>
                                                 </div>
@@ -547,7 +552,7 @@ const HeadhunterPage: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {tmplLoading ? (
+                                    {isLoading ? (
                                         <tr><td colSpan={7} className="text-center py-12 text-text-muted">Loading...</td></tr>
                                     ) : templates.length === 0 ? (
                                         <tr><td colSpan={7} className="text-center py-12">
@@ -575,7 +580,7 @@ const HeadhunterPage: React.FC = () => {
                                                     <button onClick={() => openEditTemplate(t)} className="p-2 rounded-lg hover:bg-primary/10 text-text-muted hover:text-primary transition-colors" title="Edit">
                                                         <PencilIcon className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => deleteTemplate(t)} className="p-2 rounded-lg hover:bg-error/10 text-text-muted hover:text-error transition-colors" title="Delete">
+                                                    <button onClick={() => deleteTemplateItem(t)} className="p-2 rounded-lg hover:bg-error/10 text-text-muted hover:text-error transition-colors" title="Delete">
                                                         <TrashIcon className="w-4 h-4" />
                                                     </button>
                                                 </div>
