@@ -422,32 +422,32 @@ const MockInterview: React.FC = () => {
             <button
               onClick={() => setInterviewType('mock')}
               className={`p-4 rounded-xl border-2 transition-all text-left ${interviewType === 'mock'
-                ? 'border-steel bg-steel/10'
-                : 'border-charcoal-300 hover:border-charcoal-200'
+                  ? 'border-secondary bg-secondary/10'
+                  : 'border-surface-400 hover:border-surface-500'
                 }`}
             >
               <div className="flex items-center gap-3 mb-2">
-                <div className={`w-4 h-4 rounded-full border-2 ${interviewType === 'mock' ? 'border-steel bg-steel' : 'border-light-400'
+                <div className={`w-4 h-4 rounded-full border-2 ${interviewType === 'mock' ? 'border-secondary bg-secondary' : 'border-text-muted'
                   }`} />
-                <span className="font-medium text-light">General Mock</span>
+                <span className="font-medium text-text-primary">General Mock</span>
               </div>
-              <p className="text-sm text-light-400 ml-7">
+              <p className="text-sm text-text-muted ml-7">
                 Behavioral + situational questions. Perfect for practice.
               </p>
             </button>
             <button
               onClick={() => setInterviewType('technical')}
               className={`p-4 rounded-xl border-2 transition-all text-left ${interviewType === 'technical'
-                ? 'border-steel bg-steel/10'
-                : 'border-charcoal-300 hover:border-charcoal-200'
+                  ? 'border-secondary bg-secondary/10'
+                  : 'border-surface-400 hover:border-surface-500'
                 }`}
             >
               <div className="flex items-center gap-3 mb-2">
-                <div className={`w-4 h-4 rounded-full border-2 ${interviewType === 'technical' ? 'border-steel bg-steel' : 'border-light-400'
+                <div className={`w-4 h-4 rounded-full border-2 ${interviewType === 'technical' ? 'border-secondary bg-secondary' : 'border-text-muted'
                   }`} />
-                <span className="font-medium text-light">Technical</span>
+                <span className="font-medium text-text-primary">Technical</span>
               </div>
-              <p className="text-sm text-light-400 ml-7">
+              <p className="text-sm text-text-muted ml-7">
                 Role-specific technical questions based on your profile.
               </p>
             </button>

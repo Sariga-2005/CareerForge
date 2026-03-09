@@ -4,9 +4,30 @@ import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import App from './App';
 import { store } from './store';
 import './index.css';
+
+// Minimal MUI theme so MUI components (Select, Dialog, etc.) work correctly
+// without overriding the app's TailwindCSS design
+const muiTheme = createTheme({
+  typography: {
+    fontFamily: 'Inter, system-ui, sans-serif',
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        // Prevent MUI CssBaseline from overriding our CSS variables / body styles
+        body: {
+          backgroundColor: 'unset',
+          color: 'unset',
+        },
+      },
+    },
+  },
+});
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -58,38 +79,41 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <Provider store={store}>
-        <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <App />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#2B2E34',
-                  color: '#F4F6F8',
-                  border: '1px solid #3A6EA5',
-                  borderRadius: '12px',
-                  fontFamily: 'Inter, system-ui, sans-serif',
-                },
-                success: {
-                  iconTheme: {
-                    primary: '#10B981',
-                    secondary: '#F4F6F8',
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline enableColorScheme={false} />
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <App />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: '#2B2E34',
+                    color: '#F4F6F8',
+                    border: '1px solid #3A6EA5',
+                    borderRadius: '12px',
+                    fontFamily: 'Inter, system-ui, sans-serif',
                   },
-                },
-                error: {
-                  iconTheme: {
-                    primary: '#EF4444',
-                    secondary: '#F4F6F8',
+                  success: {
+                    iconTheme: {
+                      primary: '#10B981',
+                      secondary: '#F4F6F8',
+                    },
                   },
-                },
-              }}
-            />
-          </BrowserRouter>
-        </QueryClientProvider>
-      </Provider>
+                  error: {
+                    iconTheme: {
+                      primary: '#EF4444',
+                      secondary: '#F4F6F8',
+                    },
+                  },
+                }}
+              />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </Provider>
+      </ThemeProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );
