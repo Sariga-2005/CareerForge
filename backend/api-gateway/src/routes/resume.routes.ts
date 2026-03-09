@@ -31,6 +31,13 @@ const upload = multer({
 // All routes require authentication
 router.use(authenticate);
 
+// Quick parse - extracts personal info from resume for form auto-fill (does NOT save anything)
+router.post(
+  '/quick-parse',
+  upload.single('resume'),
+  resumeController.quickParse
+);
+
 // Upload resume
 router.post(
   '/upload',
@@ -68,6 +75,20 @@ router.get(
   '/:id/job-matches',
   aiRateLimiter,
   resumeController.getJobMatches
+);
+
+// Match resume against specific job description
+router.post(
+  '/:id/match',
+  aiRateLimiter,
+  resumeController.matchJobDescription
+);
+
+// Match raw text against specific job description (standalone)
+router.post(
+  '/match-text',
+  aiRateLimiter,
+  resumeController.matchText
 );
 
 // Admin routes
