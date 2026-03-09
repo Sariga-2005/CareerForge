@@ -31,6 +31,13 @@ const upload = multer({
 // All routes require authentication
 router.use(authenticate);
 
+// Quick parse - extracts personal info from resume for form auto-fill (does NOT save anything)
+router.post(
+  '/quick-parse',
+  upload.single('resume'),
+  resumeController.quickParse
+);
+
 // Upload resume
 router.post(
   '/upload',

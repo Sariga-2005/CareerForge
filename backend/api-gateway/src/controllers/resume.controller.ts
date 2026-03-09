@@ -483,6 +483,53 @@ export class ResumeController {
     }
   };
 
+  // Quick parse - extract personal info from resume file for form auto-fill
+  quickParse = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.file) {
+        throw new ApiError('No file uploaded', 400);
+      }
+
+      const { buffer, originalname, mimetype } = req.file;
+
+      const formData = new FormData();
+      formData.append('file', buffer, {
+        filename: originalname,
+        contentType: mimetype,
+      });
+
+      try {
+        const response = await axios.post(
+          `${COGNITIVE_SCREENER_URL}/api/cognitive-screener/resume/analyze`,
+          formData,
+          {
+            timeout: 30000,
+            headers: formData.getHeaders(),
+          }
+        );
+
+        if (response.data.success) {
+          const extracted = response.data.extracted_data || {};
+          res.json({
+            success: true,
+            personal_info: extracted.personal_info || {},
+            technical_skills: extracted.technical_skills || [],
+            soft_skills: extracted.soft_skills || [],
+            education: extracted.education || [],
+          });
+        } else {
+          res.json({ success: false, personal_info: {}, technical_skills: [], soft_skills: [], education: [] });
+        }
+      } catch (parseError) {
+        logger.error('Quick parse failed:', parseError);
+        // Don't throw — return empty so frontend gracefully falls back to manual entry
+        res.json({ success: false, personal_info: {}, technical_skills: [], soft_skills: [], education: [] });
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // Admin: Get all resumes
   getAllResumes = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {

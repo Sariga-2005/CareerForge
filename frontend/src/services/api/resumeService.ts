@@ -11,6 +11,24 @@ export const resumeService = {
     return response.data.data?.resume || response.data.resume || response.data;
   },
 
+  quickParseResume: async (file: File): Promise<{
+    success: boolean;
+    personal_info: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      linkedin?: string;
+      github?: string;
+      location?: string;
+    };
+    technical_skills: string[];
+    soft_skills: string[];
+    education: any[];
+  }> => {
+    const response = await uploadWithProgress('/resume/quick-parse', file, undefined, 'resume');
+    return response.data;
+  },
+
   analyzeResume: async (resumeId: string): Promise<ResumeAnalysis> => {
     const response = await api.post(`/resume/${resumeId}/analyze`);
     // Backend returns { success, data: { analysis } }

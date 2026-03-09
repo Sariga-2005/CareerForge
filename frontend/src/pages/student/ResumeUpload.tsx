@@ -1,25 +1,18 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useDropzone } from 'react-dropzone';
 import { RootState, AppDispatch } from '../../store';
 import { uploadResume, analyzeResume, fetchResumes, deleteResume } from '../../store/slices/resumeSlice';
 import { resumeService } from '../../services/api/resumeService';
-import { ArrowPathIcon, CheckCircleIcon, ExclamationCircleIcon, LightBulbIcon, TrashIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, TrashIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import './ResumeUpload.css';
-
-interface JobMatchResult {
-  matchScore: number;
-  matchedSkills: string[];
-  missingSkills: string[];
-  recommendations: string[];
-}
 
 const ResumeUpload: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { isUploading, uploadProgress, isAnalyzing, resumes } = useSelector((state: RootState) => state.resume);
+  const { isUploading, uploadProgress, resumes } = useSelector((state: RootState) => state.resume);
 
   useEffect(() => {
     dispatch(fetchResumes());
@@ -28,21 +21,88 @@ const ResumeUpload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [analysisStatus, setAnalysisStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'complete'>('idle');
   const [showModal, setShowModal] = useState(false);
+  const [isParsing, setIsParsing] = useState(false); // quick-parse loading state
 
-  // Form State
+  // Form State — now fully controlled for auto-fill
+  const [formName, setFormName] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formLinkedin, setFormLinkedin] = useState('');
+  const [formDepartment, setFormDepartment] = useState('Computer Science & Engineering');
+  const [formCgpa, setFormCgpa] = useState('');
+  const [formSummary, setFormSummary] = useState('');
+  const [formLocation, setFormLocation] = useState('');
+  const [formJobType, setFormJobType] = useState('Full-time');
+  const [formExpLevel, setFormExpLevel] = useState('Fresher (0 yrs)');
+  const [formCtc, setFormCtc] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>(['Software Development', 'Full Stack Web']);
 
+  const allTags = [
+    'Software Development', 'Data Science & ML', 'Cloud & DevOps',
+    'Full Stack Web', 'Cybersecurity', 'Product Management',
+    'UI/UX Design', 'Mobile Development', 'Embedded Systems',
+    'Blockchain', 'AR/VR'
+  ];
 
+  // Auto-fill form from parsed resume data
+  const autoFillFromParsed = async (selectedFile: File) => {
+    setIsParsing(true);
+    try {
+      const parsed = await resumeService.quickParseResume(selectedFile);
+      if (parsed.success && parsed.personal_info) {
+        const info = parsed.personal_info;
+        if (info.name) setFormName(info.name);
+        if (info.email) setFormEmail(info.email);
+        if (info.phone) setFormPhone(info.phone);
+        if (info.linkedin) setFormLinkedin(info.linkedin);
+        if (info.location) setFormLocation(info.location);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-success';
-    if (score >= 60) return 'text-warning';
-    return 'text-error';
+        // Auto-select relevant domains based on skills
+        const skills = (parsed.technical_skills || []).map((s: string) => s.toLowerCase());
+        const autoTags: string[] = [];
+        if (skills.some(s => ['react', 'node', 'vue', 'angular', 'html', 'css', 'javascript', 'typescript'].includes(s))) {
+          autoTags.push('Full Stack Web', 'Software Development');
+        }
+        if (skills.some(s => ['python', 'tensorflow', 'pytorch', 'ml', 'machine learning', 'data', 'pandas'].includes(s))) {
+          autoTags.push('Data Science & ML');
+        }
+        if (skills.some(s => ['aws', 'docker', 'kubernetes', 'devops', 'ci/cd', 'terraform'].includes(s))) {
+          autoTags.push('Cloud & DevOps');
+        }
+        if (skills.some(s => ['android', 'ios', 'flutter', 'react native', 'swift', 'kotlin'].includes(s))) {
+          autoTags.push('Mobile Development');
+        }
+        if (skills.some(s => ['figma', 'ui', 'ux', 'sketch', 'design'].includes(s))) {
+          autoTags.push('UI/UX Design');
+        }
+        if (autoTags.length > 0) {
+          setSelectedTags(prev => Array.from(new Set([...autoTags])));
+        }
+
+        // Infer experience level from education
+        const education = parsed.education || [];
+        const hasExperience = education.length > 0;
+        if (!hasExperience) {
+          setFormExpLevel('Fresher (0 yrs)');
+        }
+
+        toast.success('Form auto-filled from your resume!', { icon: '✨' });
+      }
+    } catch (err) {
+      // Silent fail — user can fill manually
+      console.warn('Quick parse failed silently:', err);
+    } finally {
+      setIsParsing(false);
+    }
   };
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) setFile(acceptedFiles[0]);
-  }, []);
+  const onDrop = (acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      const selectedFile = acceptedFiles[0];
+      setFile(selectedFile);
+      autoFillFromParsed(selectedFile);
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -64,6 +124,12 @@ const ResumeUpload: React.FC = () => {
   const removeFile = (e: React.MouseEvent) => {
     e.stopPropagation();
     setFile(null);
+    // Optionally reset form fields when file is removed
+    setFormName('');
+    setFormEmail('');
+    setFormPhone('');
+    setFormLinkedin('');
+    setFormLocation('');
   };
 
   const handleDeleteResume = async (id: string | undefined) => {
@@ -77,8 +143,6 @@ const ResumeUpload: React.FC = () => {
       }
     }
   };
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,13 +183,6 @@ const ResumeUpload: React.FC = () => {
     setShowModal(false);
     navigate('/student/resume/analysis');
   };
-
-  const allTags = [
-    'Software Development', 'Data Science & ML', 'Cloud & DevOps',
-    'Full Stack Web', 'Cybersecurity', 'Product Management',
-    'UI/UX Design', 'Mobile Development', 'Embedded Systems',
-    'Blockchain', 'AR/VR'
-  ];
 
   const uploadProgressVal = analysisStatus === 'uploading' ? uploadProgress : (analysisStatus === 'analyzing' ? 80 : (analysisStatus === 'complete' ? 100 : (file ? 20 : 0)));
 
@@ -183,35 +240,80 @@ const ResumeUpload: React.FC = () => {
               )}
             </div>
 
-            {/* Personal Info */}
+            {/* Personal Info — auto-filled after file drop */}
             <div className="ru-card">
-              <div className="ru-card-title">
-                <span>👤</span>
-                Personal Information
+              <div className="ru-card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>👤</span>
+                  Personal Information
+                </span>
+                {isParsing && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ru-accent)', fontWeight: 500 }}>
+                    <ArrowPathIcon style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
+                    Reading resume…
+                  </span>
+                )}
+                {!isParsing && file && (formName || formEmail) && (
+                  <span style={{ fontSize: '12px', color: '#22c55e', fontWeight: 500 }}>
+                    ✨ Auto-filled
+                  </span>
+                )}
               </div>
               <div className="ru-form-grid">
                 <div className="ru-field">
                   <label>Full Name</label>
-                  <input type="text" placeholder="John Doe" required />
+                  <input
+                    type="text"
+                    placeholder="John Doe"
+                    value={formName}
+                    onChange={e => setFormName(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="ru-field">
                   <label>Email Address</label>
-                  <input type="email" placeholder="john@example.com" required />
+                  <input
+                    type="email"
+                    placeholder="john@example.com"
+                    value={formEmail}
+                    onChange={e => setFormEmail(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="ru-field">
                   <label>Phone Number</label>
-                  <input type="tel" placeholder="+91 98765 43210" required />
+                  <input
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={formPhone}
+                    onChange={e => setFormPhone(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="ru-field">
                   <label>LinkedIn Profile</label>
-                  <input type="url" placeholder="https://linkedin.com/in/username" />
+                  <input
+                    type="url"
+                    placeholder="https://linkedin.com/in/username"
+                    value={formLinkedin}
+                    onChange={e => setFormLinkedin(e.target.value)}
+                  />
+                </div>
+                <div className="ru-field">
+                  <label>Location</label>
+                  <input
+                    type="text"
+                    placeholder="Bangalore, Mumbai, Remote..."
+                    value={formLocation}
+                    onChange={e => setFormLocation(e.target.value)}
+                  />
                 </div>
                 <div className="ru-field">
                   <label>Department</label>
-                  <select defaultValue="Computer Science & Engineering">
+                  <select value={formDepartment} onChange={e => setFormDepartment(e.target.value)}>
                     <option value="">Select department</option>
-                    <option value="Computer Science & Engineering">Computer Science & Engineering</option>
-                    <option value="Electronics & Communication">Electronics & Communication</option>
+                    <option value="Computer Science & Engineering">Computer Science &amp; Engineering</option>
+                    <option value="Electronics & Communication">Electronics &amp; Communication</option>
                     <option value="Mechanical Engineering">Mechanical Engineering</option>
                     <option value="Information Technology">Information Technology</option>
                     <option value="MBA / Management">MBA / Management</option>
@@ -219,11 +321,23 @@ const ResumeUpload: React.FC = () => {
                 </div>
                 <div className="ru-field">
                   <label>CGPA</label>
-                  <input type="number" step="0.1" min="0" max="10" placeholder="8.5" />
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="8.5"
+                    value={formCgpa}
+                    onChange={e => setFormCgpa(e.target.value)}
+                  />
                 </div>
                 <div className="ru-field ru-form-full">
                   <label>Brief Summary (optional)</label>
-                  <textarea placeholder="A short bio about yourself, your goals, and areas of interest..."></textarea>
+                  <textarea
+                    placeholder="A short bio about yourself, your goals, and areas of interest..."
+                    value={formSummary}
+                    onChange={e => setFormSummary(e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -236,6 +350,9 @@ const ResumeUpload: React.FC = () => {
               </div>
               <p style={{ fontSize: '13px', color: 'var(--ru-text-secondary)', marginBottom: '14px', marginTop: 0 }}>
                 Select all domains you're interested in — this helps us match you to relevant job opportunities.
+                {file && !isParsing && selectedTags.length > 0 && (
+                  <span style={{ color: '#22c55e', marginLeft: 6 }}>✨ Suggested based on your skills</span>
+                )}
               </p>
               <div className="ru-tags-wrap">
                 {allTags.map(tag => (
@@ -258,7 +375,7 @@ const ResumeUpload: React.FC = () => {
               <div className="ru-form-grid">
                 <div className="ru-field">
                   <label>Job Type</label>
-                  <select>
+                  <select value={formJobType} onChange={e => setFormJobType(e.target.value)}>
                     <option>Full-time</option>
                     <option>Internship</option>
                     <option>Part-time</option>
@@ -267,7 +384,7 @@ const ResumeUpload: React.FC = () => {
                 </div>
                 <div className="ru-field">
                   <label>Experience Level</label>
-                  <select>
+                  <select value={formExpLevel} onChange={e => setFormExpLevel(e.target.value)}>
                     <option>Fresher (0 yrs)</option>
                     <option>0–1 Year</option>
                     <option>1–3 Years</option>
@@ -276,11 +393,21 @@ const ResumeUpload: React.FC = () => {
                 </div>
                 <div className="ru-field">
                   <label>Preferred Location</label>
-                  <input type="text" placeholder="Bangalore, Mumbai, Remote..." />
+                  <input
+                    type="text"
+                    placeholder="Bangalore, Mumbai, Remote..."
+                    value={formLocation}
+                    onChange={e => setFormLocation(e.target.value)}
+                  />
                 </div>
                 <div className="ru-field">
                   <label>Expected CTC (LPA)</label>
-                  <input type="text" placeholder="e.g. 10–15" />
+                  <input
+                    type="text"
+                    placeholder="e.g. 10–15"
+                    value={formCtc}
+                    onChange={e => setFormCtc(e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -295,7 +422,7 @@ const ResumeUpload: React.FC = () => {
                 <label className="ru-checkbox-item">
                   <input type="checkbox" defaultChecked />
                   <div className="ru-checkbox-text">
-                    <div className="ru-label">Semantic Parsing & Keyword Extraction</div>
+                    <div className="ru-label">Semantic Parsing &amp; Keyword Extraction</div>
                     <div className="ru-sub">Extract technical skills, soft skills, and key experiences automatically</div>
                   </div>
                 </label>
@@ -323,8 +450,6 @@ const ResumeUpload: React.FC = () => {
               </div>
             </div>
 
-
-
             <div className="ru-submit-row">
               <button type="button" className="ru-cancel-btn" onClick={() => navigate(-1)}>Cancel</button>
               <button
@@ -336,12 +461,21 @@ const ResumeUpload: React.FC = () => {
                     toast.error('Please select a resume file first');
                   }
                 }}
-                disabled={analysisStatus !== 'idle'}
+                disabled={analysisStatus !== 'idle' || isParsing}
               >
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                {analysisStatus === 'idle' ? 'Analyze My Resume' : 'Processing...'}
+                {isParsing ? (
+                  <>
+                    <ArrowPathIcon style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
+                    Reading Resume…
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    {analysisStatus === 'idle' ? 'Analyze My Resume' : 'Processing...'}
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -417,21 +551,21 @@ const ResumeUpload: React.FC = () => {
               <div className="ru-step">
                 <div className="ru-step-num">2</div>
                 <div className="ru-step-body">
-                  <div className="ru-step-title">AI Parsing</div>
-                  <div className="ru-step-desc">Our engine extracts skills, experience, and keywords using NLP.</div>
+                  <div className="ru-step-title">Form Auto-Fill</div>
+                  <div className="ru-step-desc">Your info is extracted instantly and fills the form for you.</div>
                 </div>
               </div>
               <div className="ru-step">
                 <div className="ru-step-num">3</div>
                 <div className="ru-step-body">
-                  <div className="ru-step-title">Score & Match</div>
+                  <div className="ru-step-title">Score &amp; Match</div>
                   <div className="ru-step-desc">Receive an ATS score and get matched to relevant drives.</div>
                 </div>
               </div>
               <div className="ru-step">
                 <div className="ru-step-num">4</div>
                 <div className="ru-step-body">
-                  <div className="ru-step-title">Practice & Apply</div>
+                  <div className="ru-step-title">Practice &amp; Apply</div>
                   <div className="ru-step-desc">Use mock interviews to prepare and apply with confidence.</div>
                 </div>
               </div>
