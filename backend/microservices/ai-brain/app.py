@@ -29,6 +29,7 @@ app.register_blueprint(job_matching_bp, url_prefix='/api/ai-brain/job-matching',
 app.register_blueprint(career_path_bp, url_prefix='/api/ai-brain/career-path', name='career_path_full')
 app.register_blueprint(skill_analysis_bp, url_prefix='/api/ai-brain/skill-analysis', name='skill_analysis_full')
 
+@app.route('/', methods=['GET'])
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({
