@@ -1,5 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { OutreachCampaign, EmailTemplate } from '../models/Headhunter.model';
+import { Alumni } from '../models/Alumni.model';
+import { OutreachRequest } from '../models/OutreachRequest.model';
+import { EmailLog } from '../models/EmailLog.model';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { logger } from '../utils/logger';
 
@@ -132,6 +135,109 @@ export class HeadhunterController {
             res.json({ success: true, message: 'Template deleted successfully' });
         } catch (error: any) {
             logger.error('[Headhunter] Error deleting template:', error.message);
+            next(error);
+        }
+    };
+    // ═══════════════════  RUN CAMPAIGN  ═══════════════════
+
+    runCampaign = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const campaign = await OutreachCampaign.findOne({ _id: req.params.id, userId: req.userId });
+            if (!campaign) { res.status(404).json({ success: false, message: 'Campaign not found' }); return; }
+            if (!campaign.isActive) { res.status(400).json({ success: false, message: 'Campaign is not active' }); return; }
+            if (!campaign.consentGiven) { res.status(400).json({ success: false, message: 'Consent not given for this campaign' }); return; }
+
+            // Pick a template (prefer default, else first available)
+            const templateId = req.body.templateId;
+            let template;
+            if (templateId) {
+                template = await EmailTemplate.findOne({ _id: templateId, userId: req.userId });
+            } else {
+                template = await EmailTemplate.findOne({ userId: req.userId, isDefault: true })
+                    || await EmailTemplate.findOne({ userId: req.userId });
+            }
+            if (!template) { res.status(400).json({ success: false, message: 'No email template found. Please create one first.' }); return; }
+
+            // Find matching alumni based on campaign targeting
+            const alumniQuery: any = { isActive: true };
+            if (campaign.targetIndustry) {
+                alumniQuery.currentCompany = { $regex: campaign.targetIndustry, $options: 'i' };
+            }
+            if (campaign.targetAlumniLevel) {
+                alumniQuery.currentDesignation = { $regex: campaign.targetAlumniLevel, $options: 'i' };
+            }
+
+            const matchedAlumni = await Alumni.find(alumniQuery).limit(campaign.maxEmailsPerWeek);
+
+            if (matchedAlumni.length === 0) {
+                res.json({ success: true, message: 'No matching alumni found for this campaign criteria.', data: { emailsSent: 0, alumni: [] } });
+                return;
+            }
+
+            // Create outreach requests and email logs
+            const results = [];
+            for (const alumni of matchedAlumni) {
+                // Check if outreach already exists
+                const existingRequest = await OutreachRequest.findOne({
+                    studentId: req.userId,
+                    campaignId: campaign._id,
+                    alumniId: alumni._id,
+                });
+                if (existingRequest) continue;
+
+                // Create outreach request
+                const outreachRequest = await OutreachRequest.create({
+                    studentId: req.userId,
+                    campaignId: campaign._id,
+                    alumniId: alumni._id,
+                    status: 'sent',
+                    eligibilityScore: 80,
+                    reason: `Auto-matched via campaign: ${campaign.campaignName}`,
+                });
+
+                // Create email log
+                const personalizedSubject = template.subject.replace('{{alumni_name}}', `${alumni.firstName} ${alumni.lastName}`);
+                const personalizedBody = template.body
+                    .replace('{{alumni_name}}', `${alumni.firstName} ${alumni.lastName}`)
+                    .replace('{{company}}', alumni.currentCompany || 'your company')
+                    .replace('{{designation}}', alumni.currentDesignation || '');
+
+                const emailLog = await EmailLog.create({
+                    campaignId: campaign._id,
+                    templateId: template._id,
+                    senderId: req.userId,
+                    recipientAlumniId: alumni._id,
+                    recipientEmail: alumni.email,
+                    subject: personalizedSubject,
+                    body: personalizedBody,
+                    status: 'sent',
+                    sentAt: new Date(),
+                });
+
+                results.push({
+                    alumniName: `${alumni.firstName} ${alumni.lastName}`,
+                    alumniEmail: alumni.email,
+                    company: alumni.currentCompany,
+                    designation: alumni.currentDesignation,
+                    outreachRequestId: outreachRequest._id,
+                    emailLogId: emailLog._id,
+                    status: 'sent',
+                });
+            }
+
+            logger.info(`[Headhunter] Campaign "${campaign.campaignName}" executed: ${results.length} emails sent by user ${req.userId}`);
+
+            res.json({
+                success: true,
+                message: `Campaign executed successfully! ${results.length} outreach emails sent.`,
+                data: {
+                    campaignName: campaign.campaignName,
+                    emailsSent: results.length,
+                    alumni: results,
+                },
+            });
+        } catch (error: any) {
+            logger.error('[Headhunter] Error running campaign:', error.message);
             next(error);
         }
     };

@@ -13,6 +13,7 @@ router.get('/campaigns/:id', headhunterController.getCampaignById);
 router.post('/campaigns', headhunterController.createCampaign);
 router.put('/campaigns/:id', headhunterController.updateCampaign);
 router.delete('/campaigns/:id', headhunterController.deleteCampaign);
+router.post('/campaigns/:id/run', headhunterController.runCampaign);
 
 // ─── Email Templates ──────────────────────────────────────────────
 router.get('/templates', headhunterController.getAllTemplates);
