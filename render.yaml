@@ -1,11 +1,12 @@
 services:
-  # API Gateway - Node.js
+  # API Gateway - Node.js Express
   - type: web
     name: careerforge-api-gateway
-    env: node
+    runtime: node
+    plan: free
     rootDir: backend/api-gateway
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    startCommand: node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,20 +19,15 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: AI_SERVICE_URL
-        fromService:
-          type: web
-          name: careerforge-ai-brain
-          envVarKey: RENDER_INTERNAL_HOSTNAME
+        sync: false
       - key: COGNITIVE_SERVICE_URL
-        fromService:
-          type: web
-          name: careerforge-cognitive-screener
-          envVarKey: RENDER_INTERNAL_HOSTNAME
+        sync: false
 
-  # AI Brain - Python
+  # AI Brain - Python Flask ML Service
   - type: web
     name: careerforge-ai-brain
-    env: python
+    runtime: python
+    plan: free
     rootDir: backend/microservices/ai-brain
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT
@@ -45,10 +41,11 @@ services:
       - key: REDIS_HOST
         sync: false
 
-  # Cognitive Screener - Python
+  # Cognitive Screener - Python Flask AI Service
   - type: web
     name: careerforge-cognitive-screener
-    env: python
+    runtime: python
+    plan: free
     rootDir: backend/microservices/cognitive-screener
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT
@@ -62,26 +59,15 @@ services:
       - key: REDIS_HOST
         sync: false
 
-  # Frontend - React (Static Site)
-  - type: web # Using web instead of static because it's a dynamic react app that needs serve or similar, but static is better for create-react-app if we just serve the build folder. Let's stick to node/web for simplicity unless it's a pure static build. Actually, Render supports 'static' for React apps very well. Let's use static.
-    
+  # Frontend - React Static Site
   - type: web
     name: careerforge-frontend
-    env: static
+    runtime: static
+    rootDir: frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: frontend/build
+    staticPublishPath: ./build
     envVars:
       - key: REACT_APP_API_URL
-        fromService:
-          type: web
-          name: careerforge-api-gateway
-          envVarKey: RENDER_EXTERNAL_URL
+        sync: false
       - key: REACT_APP_SOCKET_URL
-        fromService:
-          type: web
-          name: careerforge-api-gateway
-          envVarKey: RENDER_EXTERNAL_URL
-      - key: NODE_VERSION
-        value: 18
-
-      # You can add the other services (adaptive-interviewer, autonomous-headhunter, analytics-manager) here as well using the same Python pattern if they exist in your codebase yet.
+        sync: false
