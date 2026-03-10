@@ -7,7 +7,7 @@ import { logger } from '../utils/logger';
 const router = Router();
 
 // AI Brain service URL
-const AI_BRAIN_URL = process.env.AI_BRAIN_URL || 'http://localhost:5001';
+const AI_BRAIN_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
 
 // All routes require authentication
 router.use(authenticate);

@@ -7,8 +7,8 @@ import { ApiError } from '../middlewares/errorHandler';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { logger } from '../utils/logger';
 
-const AI_BRAIN_URL = process.env.AI_BRAIN_URL || 'http://localhost:5001';
-const COGNITIVE_SCREENER_URL = process.env.COGNITIVE_SCREENER_URL || 'http://localhost:5002';
+const AI_BRAIN_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
+const COGNITIVE_SCREENER_URL = process.env.COGNITIVE_SERVICE_URL || 'http://localhost:5002';
 
 export class ResumeController {
   // Upload resume
