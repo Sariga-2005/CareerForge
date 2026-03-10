@@ -24,6 +24,7 @@ app.register_blueprint(resume_analysis_bp, url_prefix='/api/cognitive-screener/r
 app.register_blueprint(interview_evaluation_bp, url_prefix='/api/cognitive-screener/interview')
 app.register_blueprint(cognitive_assessment_bp, url_prefix='/api/cognitive-screener/assessment')
 
+@app.route('/', methods=['GET'])
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({

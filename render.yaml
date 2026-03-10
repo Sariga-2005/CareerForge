@@ -1,0 +1,73 @@
+services:
+  # API Gateway - Node.js Express
+  - type: web
+    name: careerforge-api-gateway
+    runtime: node
+    plan: free
+    rootDir: backend/api-gateway
+    buildCommand: npm install && npm run build
+    startCommand: node dist/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AI_SERVICE_URL
+        sync: false
+      - key: COGNITIVE_SERVICE_URL
+        sync: false
+
+  # AI Brain - Python Flask ML Service
+  - type: web
+    name: careerforge-ai-brain
+    runtime: python
+    plan: free
+    rootDir: backend/microservices/ai-brain
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+
+  # Cognitive Screener - Python Flask AI Service
+  - type: web
+    name: careerforge-cognitive-screener
+    runtime: python
+    plan: free
+    rootDir: backend/microservices/cognitive-screener
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+
+  # Frontend - React Static Site
+  - type: web
+    name: careerforge-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_API_URL
+        sync: false
+      - key: REACT_APP_SOCKET_URL
+        sync: false

@@ -7,7 +7,7 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 import { logger } from '../utils/logger';
 
 // Use cognitive-screener for interview evaluation (5002)
-const ADAPTIVE_INTERVIEWER_URL = process.env.ADAPTIVE_INTERVIEWER_URL || 'http://localhost:5002';
+const ADAPTIVE_INTERVIEWER_URL = process.env.COGNITIVE_SERVICE_URL || 'http://localhost:5002';
 
 export class InterviewController {
   // Create new interview
