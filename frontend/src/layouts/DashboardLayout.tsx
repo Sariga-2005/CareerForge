@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, Transition } from '@headlessui/react';
 import {
   HomeIcon,
   DocumentTextIcon,
@@ -24,6 +25,8 @@ import {
   MegaphoneIcon,
 } from '@heroicons/react/24/outline';
 import { logout } from '../store/slices/authSlice';
+import { markNotificationRead, markAllNotificationsRead } from '../store/slices/uiSlice';
+import { socketService } from '../services/socket/socketService';
 import { AppDispatch, RootState } from '../store';
 
 interface NavItem {
@@ -84,6 +87,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { notifications } = useSelector((state: RootState) => state.ui);
+  
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const navItems = navItemsByRole[role] || studentNavItems;
   const portalLabel = portalLabels[role] || 'Student Portal';
@@ -108,6 +114,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
+
+  // Connect to real-time WebSocket for notifications
+  useEffect(() => {
+    socketService.connect();
+    
+    // Cleanup on unmount
+    return () => {
+      socketService.disconnect();
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-surface-200">
@@ -265,14 +281,79 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
 
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              <motion.button
-                className="relative w-10 h-10 rounded-xl hover:bg-surface-200 flex items-center justify-center text-text-secondary transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <BellIcon className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full animate-pulse" />
-              </motion.button>
+              <Menu as="div" className="relative">
+                <Menu.Button as={motion.button}
+                  className="relative w-10 h-10 rounded-xl hover:bg-surface-200 flex items-center justify-center text-text-secondary transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <BellIcon className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full animate-pulse" />
+                  )}
+                </Menu.Button>
+                <Transition
+                  as={React.Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-80 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden">
+                    <div className="p-4 border-b border-surface-200 flex justify-between items-center">
+                      <h3 className="font-bold text-text-primary">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            dispatch(markAllNotificationsRead());
+                          }}
+                          className="text-xs text-primary hover:text-primary-600 font-medium"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-4 text-center text-text-muted text-sm relative z-50 bg-white">
+                          No notifications yet
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <Menu.Item key={notification.id}>
+                            {({ active }) => (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  dispatch(markNotificationRead(notification.id));
+                                }}
+                                className={`w-full text-left p-4 border-b border-surface-100 flex items-start gap-3 transition-colors ${
+                                  active ? 'bg-surface-50' : ''
+                                } ${!notification.read ? 'bg-primary/5' : ''}`}
+                              >
+                                <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${
+                                  !notification.read ? 'bg-primary' : 'bg-transparent'
+                                }`} />
+                                <div>
+                                  <p className={`text-sm ${!notification.read ? 'font-semibold text-text-primary' : 'text-text-secondary'}`}>
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-text-muted mt-1">
+                                    {new Date(notification.createdAt).toLocaleTimeString()}
+                                  </p>
+                                </div>
+                              </button>
+                            )}
+                          </Menu.Item>
+                        ))
+                      )}
+                    </div>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
 
               {/* Settings */}
               <motion.button

@@ -46,11 +46,22 @@ export class ResumeController {
       });
 
       // Trigger async parsing with file buffer and mimetype
-      this.triggerParsing(resume._id.toString(), buffer, originalname, mimetype).catch((err) =>
+      const io = req.app.get('io');
+      this.triggerParsing(resume._id.toString(), buffer, originalname, mimetype, req.userId, io).catch((err) =>
         logger.error('Resume parsing failed:', err)
       );
 
       logger.info(`Resume uploaded: ${resume._id} by user ${req.userId}`);
+
+      // Emit notification
+      if (io && (io as any).emitToUser) {
+        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        (io as any).emitToUser(req.userId, 'notification', {
+          id: `res-${resume._id}`,
+          type: 'success',
+          message: `Resume uploaded at ${timeString}`
+        });
+      }
 
       res.status(201).json({
         success: true,
@@ -63,7 +74,7 @@ export class ResumeController {
   };
 
   // Trigger parsing via AI service
-  private async triggerParsing(resumeId: string, fileBuffer: Buffer, filename: string, mimetype: string): Promise<void> {
+  private async triggerParsing(resumeId: string, fileBuffer: Buffer, filename: string, mimetype: string, userId: string, io: any): Promise<void> {
     try {
       // Create form data for file upload
       const formData = new FormData();
@@ -106,6 +117,16 @@ export class ResumeController {
           },
         });
         logger.info(`Resume ${resumeId} parsed successfully with score ${overallScore}`);
+
+        // Emit notification
+        if (io && (io as any).emitToUser) {
+          const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+          (io as any).emitToUser(userId, 'notification', {
+            id: `res-analysis-${resumeId}`,
+            type: 'info',
+            message: `Resume analysis completed at ${timeString}`
+          });
+        }
       } else {
         logger.error(`Resume parsing returned error: ${response.data.error}`);
       }
@@ -132,11 +153,14 @@ export class ResumeController {
       }
 
       // Trigger re-parsing
+      const io = req.app.get('io');
       this.triggerParsing(
         resume._id.toString(),
         resume.fileData,
         resume.originalName,
-        resume.mimeType
+        resume.mimeType,
+        req.userId,
+        io
       ).catch((err) => logger.error('Re-analysis background error:', err));
 
       res.json({

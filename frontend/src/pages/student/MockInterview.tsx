@@ -25,6 +25,7 @@ import {
   setNervousnessLevel,
   resetInterview,
 } from '../../store/slices/interviewSlice';
+import { addNotification } from '../../store/slices/uiSlice';
 import { socketService } from '../../services/socket/socketService';
 import toast from 'react-hot-toast';
 import InterviewModuleTabs from './InterviewModuleTabs';
@@ -237,6 +238,17 @@ const MockInterview: React.FC = () => {
       await dispatch(startInterview({ type: interviewType })).unwrap();
       setIsStarted(true);
       socketService.startInterviewSession(currentInterview?.id || '');
+      
+      // Dispatch notification to UI state
+      const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      dispatch(
+        addNotification({
+          id: `int-start-${Date.now()}`,
+          type: 'info',
+          message: `Interview started at ${timeString}`,
+        })
+      );
+      
       toast.success('Interview started!');
     } catch (error: any) {
       const errorMessage = typeof error === 'string' ? error : error?.message || 'Failed to start interview';
@@ -346,6 +358,17 @@ const MockInterview: React.FC = () => {
       await dispatch(endInterview(currentInterview.id)).unwrap();
       socketService.endInterviewSession(currentInterview.id);
       stopMedia();
+      
+      // Dispatch notification to UI state
+      const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      dispatch(
+        addNotification({
+          id: `int-complete-${Date.now()}`,
+          type: 'success',
+          message: `Interview completed at ${timeString}`,
+        })
+      );
+      
       toast.success('Interview completed!');
       navigate('/student/interview/history');
     } catch (error: any) {

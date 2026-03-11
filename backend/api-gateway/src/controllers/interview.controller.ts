@@ -396,6 +396,17 @@ export class InterviewController {
 
       logger.info(`Interview completed: ${interview._id} with score ${avgScore}`);
 
+      // Emit notification
+      const io = req.app.get('io');
+      if (io && (io as any).emitToUser) {
+        const timeString = interview.completedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        (io as any).emitToUser(req.userId, 'notification', {
+          id: `int-${interview._id}`, // Use interview ID to prevent duplicate IDs
+          type: 'success',
+          message: `Interview completed at ${timeString}`
+        });
+      }
+
       res.json({
         success: true,
         message: 'Interview completed',

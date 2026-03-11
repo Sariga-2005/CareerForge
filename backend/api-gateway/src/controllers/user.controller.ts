@@ -59,6 +59,17 @@ export class UserController {
       }
 
       await clearUserCache(req.userId!);
+      
+      // Emit notification
+      const io = req.app.get('io');
+      if (io && (io as any).emitToUser) {
+        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        (io as any).emitToUser(req.userId, 'notification', {
+          id: `profile-update-${Date.now()}`,
+          type: 'success',
+          message: `Profile updated successfully at ${timeString}`
+        });
+      }
 
       res.json({
         success: true,

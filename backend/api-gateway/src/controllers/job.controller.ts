@@ -111,6 +111,17 @@ export class JobController {
       await job.save();
 
       logger.info(`User ${userId} applied for job ${jobId}`);
+      
+      // Emit notification
+      const io = req.app.get('io');
+      if (io && (io as any).emitToUser) {
+        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        (io as any).emitToUser(userId, 'notification', {
+          id: `job-app-${application._id}`,
+          type: 'success',
+          message: `Successfully applied to ${job.title} at ${timeString}`
+        });
+      }
 
       res.status(201).json({
         success: true,
@@ -328,6 +339,17 @@ export class JobController {
       if (!user.savedJobs.includes(jobId)) {
         user.savedJobs.push(jobId);
         await user.save();
+        
+        // Emit notification
+        const io = req.app.get('io');
+        if (io && (io as any).emitToUser) {
+          const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+          (io as any).emitToUser(req.userId, 'notification', {
+            id: `job-save-${jobId}-${Date.now()}`,
+            type: 'info',
+            message: `Job saved successfully at ${timeString}`
+          });
+        }
       }
 
       res.json({

@@ -66,16 +66,32 @@ const CareerAdvisor: React.FC = () => {
     try {
       const response = await api.get('/resume');
       const resumes = response.data.data?.resumes || response.data.resumes || [];
+      
       if (resumes.length > 0) {
-        const resume = resumes[0];
+        // Find the resume with the most extracted skills (instead of just picking the first one, which might be empty)
+        let bestResume = resumes[0];
+        let maxSkillsCount = 0;
+
+        for (const resume of resumes) {
+          const directSkills = resume.skills?.technical?.length || 0;
+          const parsedSkills = resume.parsedData?.extracted_data?.technical_skills?.length || 0;
+          const totalSkills = directSkills + parsedSkills;
+
+          if (totalSkills > maxSkillsCount) {
+            maxSkillsCount = totalSkills;
+            bestResume = resume;
+          }
+        }
+
         const skills = [
-          ...(resume.skills?.technical || []),
-          ...(resume.parsedData?.extracted_data?.technical_skills || [])
+          ...(bestResume.skills?.technical || []),
+          ...(bestResume.parsedData?.extracted_data?.technical_skills || [])
         ];
+        
         setUserProfile({
-          skills: [...new Set(skills)],
-          education: resume.parsedData?.extracted_data?.education?.[0]?.degree || 'Bachelor\'s in Computer Science',
-          experience: resume.parsedData?.extracted_data?.total_experience_years || 0
+          skills: [...new Set(skills)], // Remove duplicates
+          education: bestResume.parsedData?.extracted_data?.education?.[0]?.degree || 'Bachelor\'s in Computer Science',
+          experience: bestResume.parsedData?.extracted_data?.total_experience_years || 0
         });
       }
     } catch (error) {
