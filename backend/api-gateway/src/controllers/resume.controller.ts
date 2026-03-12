@@ -47,7 +47,7 @@ export class ResumeController {
 
       // Trigger async parsing with file buffer and mimetype
       const io = req.app.get('io');
-      this.triggerParsing(resume._id.toString(), buffer, originalname, mimetype, req.userId, io).catch((err) =>
+      this.triggerParsing(resume._id.toString(), buffer, originalname, mimetype, req.userId as string, io).catch((err) =>
         logger.error('Resume parsing failed:', err)
       );
 
@@ -160,7 +160,7 @@ export class ResumeController {
         resume.fileData,
         resume.originalName,
         resume.mimeType,
-        req.userId,
+        req.userId as string,
         io
       ).catch((err) => logger.error('Re-analysis background error:', err));
 
