@@ -43,7 +43,8 @@ class ResumeAnalyzer:
                 'quality_score': quality_score,
                 'suggestions': suggestions,
                 'job_match': job_match,
-                'ats_friendly': self._check_ats_compatibility(resume_text)
+                'ats_friendly': self._check_ats_compatibility(resume_text),
+                'raw_text': resume_text
             }
             
         except Exception as e:
@@ -56,15 +57,14 @@ class ResumeAnalyzer:
         
         prompt = f"""
 Analyze this resume carefully and extract ALL information in the exact JSON format below.
-Be thorough - extract EVERY skill, technology, tool, framework, and competency mentioned.
+Be extremely thorough - extract EVERY skill, technology, tool, framework, library, and programming language mentioned.
 
-IMPORTANT DISTINCTIONS:
-- EXPERIENCE: Only include PAID WORK or INTERNSHIP positions with a company/organization name
-- PROJECTS: Academic, personal, or side projects (hackathons, class projects, hobby projects)
-- ACHIEVEMENTS: Awards, honors, certifications, competition wins, scholarships (NOT job duties)
+IMPORTANT: 
+- PROGRAMMING LANGUAGES (e.g., Python, C++, Java) MUST be listed in `technical_skills`.
+- The `languages` field is EXCLUSIVELY for human spoken languages (e.g., English, French, Hindi).
 
 RESUME TEXT:
-{text[:4000]}
+{text[:10000]}
 
 Return ONLY valid JSON (no markdown, no explanation):
 {{
@@ -74,7 +74,8 @@ Return ONLY valid JSON (no markdown, no explanation):
         "phone": "extracted phone or null",
         "linkedin": "linkedin URL or null",
         "github": "github URL or null",
-        "location": "city/location or null"
+        "location": "city/location or null",
+        "cgpa": "overall CGPA/GPA or null"
     }},
     "technical_skills": ["list every programming language, framework, tool, technology, database, cloud service, etc."],
     "soft_skills": ["communication", "leadership", "teamwork", "problem-solving", etc. - extract from context],
@@ -126,6 +127,28 @@ Return ONLY valid JSON (no markdown, no explanation):
             
             extracted = json.loads(response_text)
             
+            # Normalize URLs
+            p_info = extracted.get('personal_info', {})
+            for key in ['linkedin', 'github']:
+                url = p_info.get(key)
+                if url and isinstance(url, str) and not url.startswith('http') and ('com' in url.lower() or key in url.lower()):
+                    p_info[key] = f"https://{url.lstrip('/')}"
+            
+            # Extract CGPA from education if not at top level
+            cgpa = p_info.get('cgpa') or extracted.get('cgpa')
+            if not cgpa:
+                education = extracted.get('education', [])
+                for edu in education:
+                    gpa = edu.get('gpa')
+                    if gpa:
+                        cgpa = str(gpa)
+                        break
+            
+            if cgpa:
+                extracted['cgpa'] = cgpa
+                if 'personal_info' in extracted:
+                    extracted['personal_info']['cgpa'] = cgpa
+            
             # Ensure required fields exist
             extracted.setdefault('technical_skills', [])
             extracted.setdefault('soft_skills', [])
@@ -142,7 +165,13 @@ Return ONLY valid JSON (no markdown, no explanation):
             return extracted
             
         except Exception as e:
-            logger.error(f"AI extraction failed: {str(e)}, falling back to regex")
+            logger.error(f"AI extraction failed: {str(e)}")
+            # Log the response text if available for debugging
+            try:
+                if 'response_text' in locals():
+                    logger.debug(f"Failed AI Response: {response_text}")
+            except:
+                pass
             return self._extract_resume_data(text)
     
     def _calculate_detailed_quality_score(self, extracted_data: Dict[str, Any], resume_text: str) -> Dict[str, Any]:
@@ -402,6 +431,7 @@ Return ONLY valid JSON array (no markdown):
             'suggestions': suggestions,
             'job_match': None,
             'ats_friendly': self._check_ats_compatibility(resume_text),
+            'raw_text': resume_text,
             'note': 'Basic analysis used due to AI service unavailability'
         }
     
@@ -446,7 +476,7 @@ Return ONLY valid JSON array (no markdown):
             
             # Web Technologies
             'html', 'html5', 'css', 'css3', 'sass', 'scss', 'less', 'tailwind', 'tailwindcss',
-            'bootstrap', 'material ui', 'materialize', 'bulma', 'foundation',
+            'bootstrap', 'material ui', 'materialize', 'bulma',
             
             # Frontend Frameworks
             'react', 'reactjs', 'react.js', 'angular', 'angularjs', 'vue', 'vuejs', 'vue.js',
@@ -570,7 +600,9 @@ Return ONLY valid JSON array (no markdown):
                             'diploma', 'associate', 'certificate']
         education_found = []
         for edu in education_keywords:
-            if edu in text_lower:
+            # Use word boundary to avoid partial matches
+            pattern = r'\b' + re.escape(edu) + r'\b'
+            if re.search(pattern, text_lower):
                 education_found.append(edu.upper() if len(edu) <= 4 else edu.title())
         
         # PROJECT EXTRACTION - Enhanced regex-based extraction
@@ -593,10 +625,11 @@ Return ONLY valid JSON array (no markdown):
                 'name': self._extract_name(text),
                 'email': emails[0] if emails else None,
                 'phone': phones[0] if phones else None,
-                'linkedin': linkedin,
-                'github': github,
+                'linkedin': f"https://{linkedin.lstrip('/')}" if linkedin and not linkedin.startswith('http') else linkedin,
+                'github': f"https://{github.lstrip('/')}" if github and not github.startswith('http') else github,
                 'portfolio': portfolio,
-                'location': self._extract_location(text)
+                'location': self._extract_location(text),
+                'cgpa': self._extract_cgpa(text)
             },
             'contact': {
                 'emails': emails,
@@ -608,6 +641,7 @@ Return ONLY valid JSON array (no markdown):
             'education': [{'degree': edu} for edu in education_found],
             'experience': experience,
             'projects': projects,
+            'cgpa': self._extract_cgpa(text),
             'estimated_experience_years': min(experience_years, 30),
             'total_experience_years': min(experience_years, 30),
             'total_words': len(text.split()),
@@ -627,6 +661,23 @@ Return ONLY valid JSON array (no markdown):
             # Name is usually the first prominent text without special characters
             if line and len(line) < 50 and re.match(r'^[A-Z][a-zA-Z\s\.]+$', line):
                 return line
+        return None
+    
+    def _extract_cgpa(self, text: str) -> str:
+        """Extract CGPA/GPA from resume text"""
+        # Patterns for GPA: 3.5, CGPA 8.5/10, GPA of 3.8, etc.
+        gpa_patterns = [
+            r'(?:GPA|CGPA|CPI)\s*(?:of|:)?\s*([0-9]\.[0-9]{1,2})',
+            r'(?:GPA|CGPA|CPI)\s*(?:of|:)?\s*([0-9]{1,2}\.[0-9]{1,2})',
+            r'([0-9]\.[0-9]{1,2})\s*(?:/|out of)\s*(?:4|5|10)',
+            r'([0-9]{1,2}\.[0-9]{1,2})\s*(?:/|out of)\s*(?:10)',
+        ]
+        
+        for pattern in gpa_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                return match.group(1)
+        
         return None
     
     def _extract_location(self, text: str) -> str:
@@ -936,52 +987,78 @@ Return ONLY valid JSON array (no markdown):
             'compatibility_score': max(score, 0),
             'issues': issues
         }
-    
     def _analyze_job_match(self, resume_text: str, job_description: str) -> Dict[str, Any]:
         """Analyze match between resume and job description using AI"""
         
         try:
+            # DEBUG: Save input text to verify what the AI sees for matching
+            try:
+                with open('debug_match_input.txt', 'w', encoding='utf-8') as f:
+                    f.write(f"ROLE: {job_description}\n\nRESUME TEXT:\n{resume_text}")
+                logger.info("Saved match input to debug_match_input.txt")
+            except Exception as debug_e:
+                logger.error(f"Failed to save match debug: {str(debug_e)}")
+
             prompt = f"""
-Analyze how well this resume matches the job description. Provide a match score (0-100) and specific feedback.
+Analyze how well this resume matches the target role. 
 
 RESUME:
-{resume_text[:2000]}  # Limit to avoid token limits
+{resume_text[:10000]}
 
-JOB DESCRIPTION:
-{job_description[:1000]}
+TARGET ROLE / JOB DESCRIPTION:
+{job_description[:5000]}
 
-Provide:
-1. Match score (0-100)
-2. Matching points (what matches well)
-3. Missing elements (what's lacking)
-4. Improvement suggestions
-
-Format as JSON.
+Return the result STRICTLY as a valid JSON object:
+{{
+    "matched_skills": ["list of relevant matched skills"],
+    "missing_skills": ["list of missing skills"],
+    "match_score": number (0-100),
+    "recommendations": ["specific suggestions for the candidate"]
+}}
 """
             
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
-                    {"role": "system", "content": "You are an expert resume analyst."},
+                    {"role": "system", "content": "You are a resume analysis assistant. Return ONLY valid JSON."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,
-                max_tokens=4096
+                max_tokens=2048
             )
             
             # Parse AI response
-            ai_analysis = response.choices[0].message.content
+            ai_analysis_text = response.choices[0].message.content.strip()
             
-            return {
-                'match_score': 75,  # Extract from AI response
-                'analysis': ai_analysis
-            }
+            # Use regex to find the JSON object in case there is text before or after it
+            json_match = re.search(r'\{.*\}', ai_analysis_text, re.DOTALL)
+            if json_match:
+                ai_analysis_text = json_match.group(0)
+            
+            try:
+                ai_analysis_json = json.loads(ai_analysis_text)
+                return {
+                    'match_score': ai_analysis_json.get('match_score', 0),
+                    'matched_skills': ai_analysis_json.get('matched_skills', []),
+                    'missing_skills': ai_analysis_json.get('missing_skills', []),
+                    'recommendations': ai_analysis_json.get('recommendations', [])
+                }
+            except json.JSONDecodeError:
+                logger.error(f"Failed to parse AI job match response as JSON: {ai_analysis_text}")
+                return {
+                    'match_score': 0,
+                    'matched_skills': [],
+                    'missing_skills': [],
+                    'recommendations': ["Error analyzing match: AI output was not valid JSON"]
+                }
             
         except Exception as e:
             logger.error(f"Error in job match analysis: {str(e)}")
             return {
                 'match_score': 0,
-                'analysis': 'Unable to analyze match at this time'
+                'matched_skills': [],
+                'missing_skills': [],
+                'recommendations': ["Unable to analyze match at this time"]
             }
     
     def parse_pdf(self, pdf_file) -> str:
@@ -993,6 +1070,14 @@ Format as JSON.
             for page in pdf_reader.pages:
                 text += page.extract_text()
             
+            # DEBUG: Save extracted text to verify what the AI sees
+            try:
+                with open('debug_extracted_text.txt', 'w', encoding='utf-8') as f:
+                    f.write(text)
+                logger.info("Saved extracted text to debug_extracted_text.txt")
+            except Exception as debug_e:
+                logger.error(f"Failed to save debug text: {str(debug_e)}")
+                
             return text
             
         except Exception as e:

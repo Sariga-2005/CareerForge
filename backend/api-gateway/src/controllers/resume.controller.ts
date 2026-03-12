@@ -109,6 +109,7 @@ export class ResumeController {
         await Resume.findByIdAndUpdate(resumeId, {
           $set: {
             parsedData: analysisData,
+            rawText: response.data.raw_text,
             analysisScore: overallScore,
             skills: {
               technical: response.data.extracted_data?.technical_skills || [],
@@ -414,17 +415,60 @@ export class ResumeController {
         throw new ApiError('Resume not found', 404);
       }
 
-      // We need the raw parsed text to run the cognitive screener job match
-      const resumeText = resume.parsedData?.extracted_data?.personal_info?.name
-        ? JSON.stringify(resume.parsedData) // Simple fallback
-        : 'Resume data could not be extracted cleanly.';
+      // Use rawText for matching if available, otherwise fallback to reconstruction
+      let resumeText = resume.rawText;
+
+      // Auto-repair: If rawText is missing but we have fileData, extract it now
+      if (!resumeText && (resume as any).fileData) {
+        try {
+          logger.info(`Auto-repairing missing rawText for resume ${resume._id}`);
+          const formData = new FormData();
+          formData.append('file', (resume as any).fileData, {
+            filename: resume.originalName,
+            contentType: resume.mimeType,
+          });
+
+          const parseResponse = await axios.post(
+            `${COGNITIVE_SCREENER_URL}/api/cognitive-screener/resume/analyze`,
+            formData,
+            { headers: { ...formData.getHeaders() }, timeout: 30000 }
+          );
+
+          if (parseResponse.data.success && parseResponse.data.raw_text) {
+            resumeText = parseResponse.data.raw_text;
+            
+            // Save repaired data in background
+            const overallScore = parseResponse.data.quality_score?.percentage || 
+                               parseResponse.data.quality_score?.overall_score || 0;
+            
+            Resume.findByIdAndUpdate(resume._id, {
+              $set: {
+                rawText: resumeText,
+                parsedData: parseResponse.data,
+                analysisScore: overallScore,
+                skills: {
+                  technical: parseResponse.data.extracted_data?.technical_skills || [],
+                  soft: parseResponse.data.extracted_data?.soft_skills || [],
+                }
+              }
+            }).catch(err => logger.error('Failed to save auto-repaired resume data:', err));
+          }
+        } catch (repairError) {
+          logger.error('Error during resume auto-repair:', repairError);
+        }
+      }
+
+      const finalResumeText = resumeText || 
+        (resume.parsedData?.extracted_data?.personal_info?.name
+          ? JSON.stringify(resume.parsedData)
+          : 'Resume data could not be extracted.');
 
       // Call Cognitive Screener service for matching
       try {
         const response = await axios.post(
           `${COGNITIVE_SCREENER_URL}/api/cognitive-screener/resume/job-match`,
           {
-            resume_text: resumeText,
+            resume_text: finalResumeText,
             job_description: targetJob,
           },
           { timeout: 30000 }
@@ -534,12 +578,25 @@ export class ResumeController {
 
         if (response.data.success) {
           const extracted = response.data.extracted_data || {};
+          const personal_info = extracted.personal_info || {};
+          
+          // Double check URL normalization in Gateway as well
+          ['linkedin', 'github'].forEach(key => {
+            let url = personal_info[key];
+            if (url && typeof url === 'string' && !url.startsWith('http')) {
+              if (url.includes('com') || url.includes(key)) {
+                personal_info[key] = `https://${url.replace(/^\/+/, '')}`;
+              }
+            }
+          });
+
           res.json({
             success: true,
-            personal_info: extracted.personal_info || {},
+            personal_info: personal_info,
             technical_skills: extracted.technical_skills || [],
             soft_skills: extracted.soft_skills || [],
             education: extracted.education || [],
+            cgpa: extracted.cgpa || personal_info.cgpa || null,
           });
         } else {
           res.json({ success: false, personal_info: {}, technical_skills: [], soft_skills: [], education: [] });

@@ -39,6 +39,7 @@ interface Resume {
       projects?: any[];
       achievements?: string[];
       certifications?: string[];
+      cgpa?: string | number;
     };
     quality_score?: {
       overall_score?: number;
@@ -70,8 +71,7 @@ const ResumeAnalysis: React.FC = () => {
 
   // Target Role Match State
   const [targetRole, setTargetRole] = useState('');
-  const [userSkills, setUserSkills] = useState('');
-  const [userInterests, setUserInterests] = useState('');
+  // (Removed unused manual skill fields)
   const [isMatchingRole, setIsMatchingRole] = useState(false);
   const [roleMatchResult, setRoleMatchResult] = useState<any>(null);
 
@@ -87,20 +87,14 @@ const ResumeAnalysis: React.FC = () => {
       toast.error('Please select or enter a target role');
       return;
     }
-    if (!resume && !userSkills.trim()) {
-      toast.error('Please enter your skills to match against the role');
+    if (!resume) {
+      toast.error('Please upload a resume first to match against the role');
       return;
     }
 
     try {
       setIsMatchingRole(true);
-      let result;
-      if (!resume || userSkills.trim().length > 0) {
-        const constructedText = `Skills: ${userSkills}\nInterests: ${userInterests}`;
-        result = await resumeService.matchTextWithJD(constructedText, targetRole);
-      } else {
-        result = await resumeService.matchWithJD(resume._id, targetRole);
-      }
+      const result = await resumeService.matchWithJD(resume._id, targetRole);
       setRoleMatchResult(result);
       toast.success(`Successfully matched against ${targetRole}`);
     } catch (error) {
@@ -186,7 +180,7 @@ const ResumeAnalysis: React.FC = () => {
           Target Role Matcher
         </h3>
         <p className="text-light-400 text-sm mb-4">
-          Test your profile against a specific role. {!resume && "Select a role and enter your skills below to see how well you match."}
+          Test your profile against a specific role. {!resume && "Please upload a resume first to test against a role."}
         </p>
 
         <form onSubmit={handleTargetRoleMatch} className="space-y-4">
@@ -222,35 +216,6 @@ const ResumeAnalysis: React.FC = () => {
                 )}
               </button>
             </div>
-            
-            {(!resume || userSkills.length > 0 || userInterests.length > 0) && (
-              <>
-                <div className="md:col-span-2 mt-2">
-                  <label className="block text-light-400 text-sm mb-1">
-                    Your Skills {resume ? "(Overrides resume skills)" : "(Required without resume)"}
-                  </label>
-                  <textarea
-                    className="w-full bg-charcoal-300/30 border border-white/10 rounded-lg p-3 text-light focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all min-h-[80px]"
-                    placeholder="e.g. React, Node.js, Python, Leadership, Database Design..."
-                    value={userSkills}
-                    onChange={(e) => setUserSkills(e.target.value)}
-                  />
-                </div>
-                
-                <div className="md:col-span-2">
-                  <label className="block text-light-400 text-sm mb-1">
-                    Your Interests & Domains (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full bg-charcoal-300/30 border border-white/10 rounded-lg p-3 text-light focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
-                    placeholder="e.g. Web Development, AI, Open Source..."
-                    value={userInterests}
-                    onChange={(e) => setUserInterests(e.target.value)}
-                  />
-                </div>
-              </>
-            )}
           </div>
         </form>
 
@@ -430,6 +395,35 @@ const ResumeAnalysis: React.FC = () => {
             <p className="text-light-400 text-sm mt-2">
               {atsScore >= 80 ? 'Excellent compatibility' : atsScore >= 60 ? 'Room for improvement' : 'Needs work'}
             </p>
+          </div>
+
+          {/* Profile Insights (CGPA & Links) */}
+          <div className="card-dark">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-light-400 text-sm">Profile Insights</span>
+              <InformationCircleIcon className="w-5 h-5 text-light-400" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-light-400 text-sm">CGPA:</span>
+                <span className="text-light font-bold">{extractedData.cgpa || extractedData.personal_info?.cgpa || 'N/A'}</span>
+              </div>
+              <div className="flex items-center justify-between overflow-hidden">
+                <span className="text-light-400 text-sm">LinkedIn:</span>
+                <div className="truncate flex-1 text-right ml-4">
+                  {extractedData.personal_info?.linkedin ? (
+                    <a 
+                      href={extractedData.personal_info.linkedin} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-accent hover:underline text-sm"
+                    >
+                      View Profile
+                    </a>
+                  ) : <span className="text-light-400 text-sm italic">Not found</span>}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* File Info */}

@@ -14,6 +14,9 @@ export interface IResume extends Document {
   // Parsed data - stores full AI analysis
   parsedData?: any;
   
+  // Raw extracted text for search and matching
+  rawText?: string;
+  
   // Skills extracted from resume
   skills?: {
     technical: string[];
@@ -88,6 +91,7 @@ const resumeSchema = new Schema<IResume>(
       select: false, // Don't include in queries by default to save bandwidth
     },
     parsedData: Schema.Types.Mixed,
+    rawText: String,
     skills: {
       technical: [String],
       soft: [String],

@@ -63,7 +63,7 @@
   gap: 8px;
 }
 
-.ru-container .ru-card-title span {
+.ru-container .ru-card-icon {
   width: 24px;
   height: 24px;
   background: var(--ru-accent-dim);
@@ -73,6 +73,7 @@
   justify-content: center;
   font-size: 12px;
   color: var(--ru-accent-light);
+  flex-shrink: 0;
 }
 
 .ru-container .ru-drop-zone {

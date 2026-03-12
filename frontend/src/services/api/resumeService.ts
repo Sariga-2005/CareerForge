@@ -24,6 +24,7 @@ export const resumeService = {
     technical_skills: string[];
     soft_skills: string[];
     education: any[];
+    cgpa?: string | number | null;
   }> => {
     const response = await uploadWithProgress('/resume/quick-parse', file, undefined, 'resume');
     return response.data;

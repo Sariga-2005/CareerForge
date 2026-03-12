@@ -85,6 +85,14 @@ const ResumeUpload: React.FC = () => {
         if (!hasExperience) {
           setFormExpLevel('Fresher (0 yrs)');
         }
+        
+        // Auto-fill CGPA
+        if (parsed.cgpa) {
+          setFormCgpa(parsed.cgpa.toString());
+        } else if (education.length > 0 && education[0].gpa) {
+          // Fallback to first education entry GPA if top-level cgpa is missing
+          setFormCgpa(education[0].gpa.toString());
+        }
 
         toast.success('Form auto-filled from your resume!', { icon: '✨' });
       }
@@ -199,7 +207,7 @@ const ResumeUpload: React.FC = () => {
             {/* File Upload */}
             <div className="ru-card">
               <div className="ru-card-title">
-                <span>📄</span>
+                <span className="ru-card-icon">📄</span>
                 Resume File
               </div>
 
@@ -243,10 +251,10 @@ const ResumeUpload: React.FC = () => {
             {/* Personal Info — auto-filled after file drop */}
             <div className="ru-card">
               <div className="ru-card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>👤</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="ru-card-icon">👤</span>
                   Personal Information
-                </span>
+                </div>
                 {isParsing && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ru-accent)', fontWeight: 500 }}>
                     <ArrowPathIcon style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
@@ -345,7 +353,7 @@ const ResumeUpload: React.FC = () => {
             {/* Target Domains */}
             <div className="ru-card">
               <div className="ru-card-title">
-                <span>🎯</span>
+                <span className="ru-card-icon">🎯</span>
                 Target Domains
               </div>
               <p style={{ fontSize: '13px', color: 'var(--ru-text-secondary)', marginBottom: '14px', marginTop: 0 }}>
@@ -369,7 +377,7 @@ const ResumeUpload: React.FC = () => {
               <div className="ru-divider"></div>
 
               <div className="ru-card-title" style={{ marginBottom: '14px' }}>
-                <span>💼</span>
+                <span className="ru-card-icon">💼</span>
                 Role Preference
               </div>
               <div className="ru-form-grid">
@@ -415,7 +423,7 @@ const ResumeUpload: React.FC = () => {
             {/* Analysis Options */}
             <div className="ru-card">
               <div className="ru-card-title">
-                <span>⚙️</span>
+                <span className="ru-card-icon">⚙️</span>
                 Analysis Options
               </div>
               <div className="ru-checkbox-group">
@@ -486,7 +494,7 @@ const ResumeUpload: React.FC = () => {
           {/* Uploaded Resumes CRUD List */}
           <div className="ru-card" style={{ padding: '20px' }}>
             <div className="ru-card-title" style={{ marginBottom: '14px' }}>
-              <span>📁</span>
+              <span className="ru-card-icon">📁</span>
               My Uploaded Resumes
             </div>
             {resumes && resumes.length > 0 ? (
