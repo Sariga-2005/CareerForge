@@ -23,7 +23,9 @@ import {
   DocumentChartBarIcon,
   AcademicCapIcon,
   MegaphoneIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
+
 import { logout } from '../store/slices/authSlice';
 import { markNotificationRead, markAllNotificationsRead } from '../store/slices/uiSlice';
 import { socketService } from '../services/socket/socketService';
@@ -49,7 +51,9 @@ const studentNavItems: NavItem[] = [
   { path: '/student/career', label: 'Career Advisor', icon: SparklesIcon },
   { path: '/student/headhunter', label: 'Headhunter', icon: MegaphoneIcon },
   { path: '/student/profile', label: 'Profile', icon: UserIcon },
+  { path: '/feedback', label: 'Feedback', icon: ChatBubbleLeftRightIcon },
 ];
+
 
 const adminNavItems: NavItem[] = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: HomeIcon },
@@ -61,13 +65,17 @@ const adminNavItems: NavItem[] = [
   { path: '/admin/reports', label: 'Placement Reports', icon: DocumentChartBarIcon },
   { path: '/admin/predictions', label: 'Placement Predictions', icon: ChartBarIcon },
   { path: '/admin/settings', label: 'System Settings', icon: Cog6ToothIcon },
+  { path: '/feedback', label: 'Feedback', icon: ChatBubbleLeftRightIcon },
 ];
+
 
 const alumniNavItems: NavItem[] = [
   { path: '/alumni/dashboard', label: 'Dashboard', icon: HomeIcon },
   { path: '/alumni/referrals', label: 'Referral Requests', icon: BriefcaseIcon },
   { path: '/alumni/mentorship', label: 'Mentorship', icon: AcademicCapIcon },
+  { path: '/feedback', label: 'Feedback', icon: ChatBubbleLeftRightIcon },
 ];
+
 
 const navItemsByRole: Record<string, NavItem[]> = {
   student: studentNavItems,

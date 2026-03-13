@@ -28,6 +28,8 @@ import alumniAdminRoutes from './routes/alumniAdmin.routes';
 import placementReportRoutes from './routes/placementReport.routes';
 import placementPredictionRoutes from './routes/placementPrediction.routes';
 import headhunterRoutes from './routes/headhunter.routes';
+import feedbackRoutes from './routes/feedback.routes';
+
 
 dotenv.config();
 
@@ -90,6 +92,8 @@ app.use('/api/v1/admin/alumni', alumniAdminRoutes);
 app.use('/api/v1/admin/reports', placementReportRoutes);
 app.use('/api/v1/admin/predictions', placementPredictionRoutes);
 app.use('/api/v1/headhunter', headhunterRoutes);
+app.use('/api/v1/feedback', feedbackRoutes);
+
 
 // 404 handler
 app.use((req: Request, res: Response) => {

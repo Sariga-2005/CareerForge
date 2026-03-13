@@ -13,6 +13,8 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import FeedbackPage from './pages/FeedbackPage';
+
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -87,6 +89,8 @@ const App: React.FC = () => {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/feedback" element={<FeedbackPage />} />
+
 
       {/* Auth Routes */}
       <Route element={<AuthLayout />}>
