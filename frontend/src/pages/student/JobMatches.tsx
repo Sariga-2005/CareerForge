@@ -303,8 +303,9 @@ const JobMatches: React.FC = () => {
             }`}
         >
           <BookmarkSolidIcon className="w-4 h-4 inline mr-2" />
-          Saved Jobs ({savedJobIds.length})
+          Saved Jobs ({savedJobsList.length})
         </button>
+
       </motion.div>
 
       {/* Search & Filters */}

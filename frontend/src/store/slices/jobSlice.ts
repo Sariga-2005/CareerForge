@@ -62,17 +62,19 @@ export const fetchSavedJobs = createAsyncThunk('jobs/fetchSaved', async (_, { re
 
 export const saveJob = createAsyncThunk('jobs/save', async (jobId: string, { rejectWithValue }) => {
     try {
-        await jobService.saveJob(jobId);
-        return jobId;
+        const data = await jobService.saveJob(jobId);
+        return data.savedJobs;
     } catch (err: any) { return rejectWithValue(err.response?.data?.message || 'Failed to save job'); }
 });
 
+
 export const unsaveJob = createAsyncThunk('jobs/unsave', async (jobId: string, { rejectWithValue }) => {
     try {
-        await jobService.unsaveJob(jobId);
-        return jobId;
+        const data = await jobService.unsaveJob(jobId);
+        return data.savedJobs;
     } catch (err: any) { return rejectWithValue(err.response?.data?.message || 'Failed to unsave job'); }
 });
+
 
 export const applyForJob = createAsyncThunk('jobs/apply', async ({ jobId, data }: { jobId: string; data: any }, { rejectWithValue }) => {
     try {
@@ -112,13 +114,12 @@ const jobSlice = createSlice({
             })
 
             .addCase(saveJob.fulfilled, (state, action) => {
-                if (!state.savedJobIds.includes(action.payload)) {
-                    state.savedJobIds.push(action.payload);
-                }
+                state.savedJobIds = action.payload || [];
             })
             .addCase(unsaveJob.fulfilled, (state, action) => {
-                state.savedJobIds = state.savedJobIds.filter(id => id !== action.payload);
+                state.savedJobIds = action.payload || [];
             })
+
             
             .addCase(fetchAppliedJobs.fulfilled, (state, action) => {
                 const applications = action.payload?.applications || [];
