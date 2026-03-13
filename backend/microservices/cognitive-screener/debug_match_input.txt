@@ -1,0 +1,57 @@
+ROLE: Software Engineer
+
+RESUME TEXT:
+NAREN MOORTHY.S 
+Madurai, India 
+Amrita Vishwa Vidyapeetham University, Coimbatore
+B.Tech Computer Science & Engineering (CGPA of 8 . 5 7) 
+ Created a blockchain-backed traceability platform that records each stage of a frozen food batch on Ethereum Sepolia. Designed smart
+contracts in Solidity using structs and mappings to manage batch creation, transfers, and recall logic. Integrated Web3.js for front-end
+verification and event monitoring. 
+This on-chain workflow improved transparency across suppliers and reduced the chances of data tampering while enabling faster recall
+identification. Built a real-time AI interview system using Groq API to analyze student profiles and deliver instant performance insights along with an
+Agentic AI Headhunter Module.
+Developed predictive gap analysis models to compare user skills with industry hiring trends and generate adaptive career roadmaps.
+Designed data dashboards and a MongoDB-backed data pipeline to track placement readiness scores and student progress. +91 9003980260
+GitHub: https://github.com/Naren-bit n4r4n15@gmail.com
+Languages: Java, Python, C++, C, HTML/CSS, JavaScript, SQL 
+Technologies/Frameworks/Libraries: Node.js,React.js,Express.js, MongoDB, Nmap, WireShark, BurpSuite, GoBuster, MetaSploit, 
+Postgre SQL, Tableau, LangChainRoute Optimization for Drones | DSA, Quad Trees, Segment Trees, A*, Min-Heap | 2023 - 2027linkedin.com/in/naren-moorthy-ab3a29266/ 
+Class Representative during my First Year at my University. 
+Part of the Student Council at Queen Mira International School as a Minister of Information & Broadcasting.
+Received the prestigious Scholar Badge Award in the 4th, 6th, 7th & 8th standard along with the Ignited Mind Award resulting in
+receiving the Blue Blazer. 
+Member of the AMUNSO (Amrita Mock United Nations Society) 
+Received the Shining Star Award for excellence in academics during my 11 standard at Velammal Bodhi Campus, Madurai. th
+Represented my school (QMIS) in the IIMUN 2019 Mock Parliament. 
+Represented my school (Velammal Bodhi Campus) in the Inter-School Debate Competition (The Bait) during my 11 standard. thSupply Chain Traceability (FrozenFood) | Solidity, EthereumSepolia, Web3.js | 
+Built a drone routing system that can handle both static and moving obstacles. Quad Trees and Dynamic Segment Trees helped to index
+the environment faster, and Min-Heap-based A* search was used to update routes on the fly. 
+These optimizations led obstacle checks to became about 40% quicker, route recalculations dropped by roughly 30%, and the system
+used around 15–18% less battery during longer paths.CareerForge | AI-Powered Placement Analytics & Decision Support | Next.js, MongoDB, Groq API, Gemini AI, Docker |
+The Complete Cybersecurity Course - Volume 1 (Stationx) EDUCATION 
+Velammal Bodhi Campus, Madurai
+Grade 12, CBSE, Science with Computer Science ( 9 2 . 4 %)  
+NullClass | Web Application Hacking Intern 
+Krishnagiri, TamilNaduQueen Mira International School, Madurai
+Grade 10, CBSE ( 9 4 . 6 %)  2022 - 2023
+2020 - 2021
+EXPERIENCE
+Successfully identified and reported a critical Open Redirect vulnerability in a live e-commerce site. Performed vulnerability assessments,
+manipulated HTTP traffic, and discovered hidden directories. 
+Completed OWASP Top 10 training and applied it in real-world bug bounty and CTF-style tasks. 
+PROJECTS
+CERTIFICATIONS
+ACHEIVEMENTS
+PROFILE LINKS
+Leetcode: https://leetcode.com/u/_naren_18/ 
+TECHNICAL SKILLSMajor topics covering encryption, anonymity, malware, and core security principles. Built a clear conceptual foundation before
+moving into hands-on cybersecurity work.
+Google Cybersecurity Professional Certificate – Foundations of Cybersecurity (1/8)
+Introduction to the basics of cybersecurity, including threat types, risk management, and security roles. Developed a solid starting
+point for understanding how cybersecurity teams operate.SecureCare Plus – Enterprise Healthcare Management System | React, Node.js, Express, MongoDB, Tailwind CSS, Gemini API |
+Engineered a GDPR/HIPAA-compliant healthcare platform utilizing Role-Based Access Control (RBAC) to enforce secure data
+handling across Patient, Doctor, and Admin portals.
+Implemented a patient-driven consent management workflow with instant 403-blocking enforcement and a centralized audit trail
+for Electronic Health Records (EHR).
+Portfolio: https://naren-bit.github.io/

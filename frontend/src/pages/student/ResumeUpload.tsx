@@ -86,12 +86,11 @@ const ResumeUpload: React.FC = () => {
           setFormExpLevel('Fresher (0 yrs)');
         }
         
-        // Auto-fill CGPA
+        // Auto-fill CGPA (2 decimal places)
         if (parsed.cgpa) {
-          setFormCgpa(parsed.cgpa.toString());
+          setFormCgpa(parseFloat(parsed.cgpa.toString()).toFixed(2));
         } else if (education.length > 0 && education[0].gpa) {
-          // Fallback to first education entry GPA if top-level cgpa is missing
-          setFormCgpa(education[0].gpa.toString());
+          setFormCgpa(parseFloat(education[0].gpa.toString()).toFixed(2));
         }
 
         toast.success('Form auto-filled from your resume!', { icon: '✨' });
@@ -165,18 +164,37 @@ const ResumeUpload: React.FC = () => {
 
       const uploadResult = await dispatch(uploadResume(file)).unwrap();
 
-      setAnalysisStatus('analyzing');
       const resumeId = uploadResult._id || uploadResult.id;
-
       if (resumeId) {
-        try {
-          await dispatch(analyzeResume(resumeId)).unwrap();
+          setAnalysisStatus('analyzing');
+          // Increase initial delay to ensure file is fully processed by storage/db
+          await new Promise(r => setTimeout(r, 3000));
+
+          let analysisSucceeded = false;
+          let attempt = 0;
+          const maxAttempts = 3; // Increased to 3 attempts
+
+          while (!analysisSucceeded && attempt < maxAttempts) {
+            try {
+              if (attempt > 0) {
+                // Exponential-ish backoff
+                await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+              }
+              await dispatch(analyzeResume(resumeId)).unwrap();
+              analysisSucceeded = true;
+            } catch (error) {
+              attempt++;
+              console.warn(`Analysis attempt ${attempt} failed, retrying...`, error);
+            }
+          }
+
+          if (!analysisSucceeded) {
+            toast.error('Analysis took longer than expected. You can click "Re-analyze" in the History tab if results are missing.', { duration: 5000 });
+          }
+          
           setAnalysisStatus('complete');
-        } catch (error) {
-          console.error(error);
-          setAnalysisStatus('complete'); // proceed anyway
-        }
-      } else {
+        } else {
+        console.error('No resume ID returned from upload:', uploadResult);
         setAnalysisStatus('complete');
       }
     } catch (error) {
@@ -331,10 +349,10 @@ const ResumeUpload: React.FC = () => {
                   <label>CGPA</label>
                   <input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
                     max="10"
-                    placeholder="8.5"
+                    placeholder="8.50"
                     value={formCgpa}
                     onChange={e => setFormCgpa(e.target.value)}
                   />

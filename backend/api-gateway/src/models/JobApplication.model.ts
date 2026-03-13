@@ -6,7 +6,16 @@ export interface IJobApplication extends Document {
     jobId: Types.ObjectId;
     coverLetter: string;
     resumeId?: Types.ObjectId;
-    status: 'pending' | 'reviewed' | 'shortlisted' | 'rejected' | 'accepted';
+    githubLink?: string;
+    linkedinLink?: string;
+    portfolioLink?: string;
+    skills?: string[];
+    matchScore?: number;
+    university?: string;
+    degree?: string;
+    cgpa?: number;
+    phone?: string;
+    status: 'pending' | 'reviewed' | 'shortlisted' | 'rejected' | 'accepted' | 'forwarded_to_company';
     appliedAt: Date;
     updatedAt: Date;
 }
@@ -17,9 +26,18 @@ const jobApplicationSchema = new Schema<IJobApplication>(
         jobId: { type: Schema.Types.ObjectId, ref: 'Job', required: true, index: true },
         coverLetter: { type: String, default: '', maxlength: 3000 },
         resumeId: { type: Schema.Types.ObjectId, ref: 'Resume' },
+        githubLink: { type: String },
+        linkedinLink: { type: String },
+        portfolioLink: { type: String },
+        skills: [{ type: String }],
+        matchScore: { type: Number, min: 0, max: 100 },
+        university: { type: String },
+        degree: { type: String },
+        cgpa: { type: Number },
+        phone: { type: String },
         status: {
             type: String,
-            enum: ['pending', 'reviewed', 'shortlisted', 'rejected', 'accepted'],
+            enum: ['pending', 'reviewed', 'shortlisted', 'rejected', 'accepted', 'forwarded_to_company'],
             default: 'pending',
         },
     },

@@ -1,36 +1,60 @@
+/* ===== Resume Upload — Wide & Polished ===== */
+
 .ru-container {
-  --ru-bg: #f4f6fb;
+  --ru-bg: #F5F7FA;
   --ru-sidebar: #ffffff;
   --ru-card: #ffffff;
-  --ru-card-hover: #f8f9ff;
-  --ru-border: #e2e6f0;
-  --ru-accent: #6c63ff;
-  --ru-accent-light: #5a52e8;
-  --ru-accent-dim: rgba(108, 99, 255, 0.08);
-  --ru-accent-glow: rgba(108, 99, 255, 0.2);
-  --ru-success: #22c55e;
-  --ru-success-dim: rgba(34, 197, 94, 0.08);
-  --ru-warning: #f59e0b;
-  --ru-text-primary: #1a1d2e;
-  --ru-text-secondary: #6b7080;
-  --ru-text-muted: #a8afc4;
-  --ru-tag-bg: #f0f1f8;
+  --ru-card-hover: #FAFBFC;
+  --ru-border: #E1E6ED;
+  --ru-accent: #1E3A5F;
+  --ru-accent-light: #4A90D9;
+  --ru-accent-dim: rgba(30, 58, 95, 0.08);
+  --ru-accent-glow: rgba(74, 144, 217, 0.2);
+  --ru-success: #10B981;
+  --ru-success-dim: rgba(16, 185, 129, 0.08);
+  --ru-warning: #F59E0B;
+  --ru-text-primary: #1A2B3C;
+  --ru-text-secondary: #3D5168;
+  --ru-text-muted: #637793;
+  --ru-tag-bg: #EDF1F5;
 
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   color: var(--ru-text-primary);
+  /* ---- wider container ---- */
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 32px;
+  box-sizing: border-box;
 }
 
+/* ---- Flex layout fills all available space ---- */
+.ru-content-flex {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+/* ---- Form takes all remaining width ---- */
 .ru-container .ru-form-area {
   flex: 1;
-  max-width: 680px;
+  min-width: 0;          /* prevent flex blowout */
+  /* no max-width cap any more */
 }
 
+/* ---- Sidebar a little wider ---- */
+.ru-container .ru-sidebar-panel {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+/* ===== Page Header ===== */
 .ru-container .ru-page-header {
   margin-bottom: 28px;
 }
 
 .ru-container .ru-page-header h1 {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.5px;
   margin: 0;
@@ -41,20 +65,27 @@
   font-size: 14px;
   color: var(--ru-text-secondary);
   margin-top: 4px;
-  margin-bottom: 0px;
+  margin-bottom: 0;
 }
 
+/* ===== Card ===== */
 .ru-container .ru-card {
   background: var(--ru-card);
-  border: 1px solid var(--ru-border);
-  border-radius: 14px;
-  padding: 24px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 2px solid var(--ru-border);
+  border-radius: 1rem;
+  padding: 28px;
+  margin-bottom: 22px;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.ru-container .ru-card:hover {
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.08);
+  border-color: #cdd5de;
 }
 
 .ru-container .ru-card-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--ru-text-primary);
   margin-bottom: 18px;
@@ -64,34 +95,36 @@
 }
 
 .ru-container .ru-card-icon {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   background: var(--ru-accent-dim);
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ru-accent-light);
   flex-shrink: 0;
 }
 
+/* ===== Drop‑zone ===== */
 .ru-container .ru-drop-zone {
   border: 2px dashed var(--ru-border);
-  border-radius: 12px;
-  padding: 40px 24px;
+  border-radius: 0.75rem;
+  padding: 44px 28px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s;
   position: relative;
   overflow: hidden;
+  background: linear-gradient(180deg, rgba(74,144,217,0.02) 0%, transparent 100%);
 }
 
 .ru-container .ru-drop-zone::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 0%, var(--ru-accent-dim) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(74, 144, 217, 0.06) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -108,22 +141,22 @@
 }
 
 .ru-container .ru-drop-icon {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   background: var(--ru-accent-dim);
-  border-radius: 14px;
+  border-radius: 16px;
   margin: 0 auto 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  border: 1px solid rgba(108, 99, 255, 0.2);
+  font-size: 24px;
+  border: 1px solid rgba(30, 58, 95, 0.2);
   position: relative;
   z-index: 1;
 }
 
 .ru-container .ru-drop-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   margin-bottom: 6px;
   position: relative;
@@ -141,21 +174,22 @@
 
 .ru-container .ru-browse-btn {
   background: var(--ru-accent-dim);
-  border: 1px solid rgba(108, 99, 255, 0.35);
-  color: var(--ru-accent-light);
-  padding: 8px 20px;
-  border-radius: 8px;
+  border: 2px solid rgba(30, 58, 95, 0.25);
+  color: var(--ru-accent);
+  padding: 9px 24px;
+  border-radius: 0.75rem;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.15s;
+  transition: all 0.2s;
   position: relative;
   z-index: 1;
 }
 
 .ru-container .ru-browse-btn:hover {
-  background: rgba(108, 99, 255, 0.25);
+  background: rgba(30, 58, 95, 0.14);
+  transform: translateY(-1px);
 }
 
 .ru-container .ru-file-types {
@@ -174,7 +208,7 @@
   border-radius: 5px;
   padding: 3px 8px;
   font-size: 11px;
-  font-family: 'DM Mono', monospace;
+  font-family: 'Inter', system-ui, sans-serif;
   color: var(--ru-text-secondary);
 }
 
@@ -183,6 +217,7 @@
   font-size: 12px;
 }
 
+/* ===== File Preview ===== */
 .ru-container .ru-file-preview {
   display: none;
   align-items: center;
@@ -242,10 +277,11 @@
   color: #f87171;
 }
 
+/* ===== Form Grid — three columns on wide screens ===== */
 .ru-container .ru-form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
 }
 
 .ru-container .ru-form-full {
@@ -267,6 +303,7 @@
   margin: 0;
 }
 
+/* ===== Inputs ===== */
 .ru-container input[type="text"],
 .ru-container input[type="email"],
 .ru-container input[type="tel"],
@@ -274,16 +311,17 @@
 .ru-container input[type="number"],
 .ru-container select,
 .ru-container textarea {
-  background: #f8f9ff;
-  border: 1px solid var(--ru-border);
-  border-radius: 8px;
-  padding: 10px 13px;
-  font-size: 13.5px;
+  background: #ffffff;
+  border: 2px solid var(--ru-border);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  font-size: 14px;
   font-family: inherit;
   color: var(--ru-text-primary);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   outline: none;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .ru-container input::placeholder,
@@ -294,8 +332,9 @@
 .ru-container input:focus,
 .ru-container select:focus,
 .ru-container textarea:focus {
-  border-color: var(--ru-accent);
-  box-shadow: 0 0 0 3px var(--ru-accent-glow);
+  border-color: var(--ru-accent-light);
+  box-shadow: 0 0 0 4px rgba(74, 144, 217, 0.15);
+  background: #fcfdff;
 }
 
 .ru-container select option {
@@ -308,10 +347,11 @@
   min-height: 90px;
 }
 
+/* ===== Checkboxes ===== */
 .ru-container .ru-checkbox-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .ru-container .ru-checkbox-item {
@@ -320,6 +360,15 @@
   gap: 10px;
   cursor: pointer;
   margin: 0;
+  padding: 12px 14px;
+  border: 1.5px solid var(--ru-border);
+  border-radius: 10px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.ru-container .ru-checkbox-item:hover {
+  border-color: var(--ru-accent-light);
+  background: rgba(74, 144, 217, 0.03);
 }
 
 .ru-container .ru-checkbox-item input[type="checkbox"] {
@@ -341,63 +390,69 @@
 .ru-container .ru-checkbox-text .ru-sub {
   font-size: 12px;
   color: var(--ru-text-secondary);
+  line-height: 1.5;
 }
 
+/* ===== Divider ===== */
 .ru-container .ru-divider {
   height: 1px;
   background: var(--ru-border);
-  margin: 20px 0;
+  margin: 22px 0;
 }
 
+/* ===== Tags ===== */
 .ru-container .ru-tags-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .ru-container .ru-skill-tag {
-  padding: 5px 12px;
+  padding: 7px 16px;
   border-radius: 20px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
   background: var(--ru-tag-bg);
-  border: 1px solid var(--ru-border);
+  border: 1.5px solid var(--ru-border);
   color: var(--ru-text-secondary);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s;
   user-select: none;
 }
 
 .ru-container .ru-skill-tag:hover {
   border-color: var(--ru-accent);
-  color: var(--ru-accent-light);
+  color: var(--ru-accent);
+  transform: translateY(-1px);
 }
 
 .ru-container .ru-skill-tag.ru-selected {
-  background: var(--ru-accent-dim);
+  background: var(--ru-accent);
   border-color: var(--ru-accent);
-  color: var(--ru-accent-light);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.25);
 }
 
+/* ===== Submit Row ===== */
 .ru-container .ru-submit-row {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .ru-container .ru-submit-btn {
   flex: 1;
-  padding: 12px 24px;
-  background: var(--ru-accent);
-  border: none;
-  border-radius: 10px;
+  padding: 0.85rem 1.5rem;
+  background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
   color: #fff;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 14.5px;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.2s;
+  transition: all 0.25s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -405,6 +460,7 @@
   letter-spacing: -0.2px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 14px rgba(30, 58, 95, 0.25);
 }
 
 .ru-container .ru-submit-btn:disabled {
@@ -416,13 +472,13 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, transparent 60%);
 }
 
 .ru-container .ru-submit-btn:not(:disabled):hover {
-  background: var(--ru-accent-light);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 24px var(--ru-accent-glow);
+  background: linear-gradient(135deg, #162B47 0%, #1E3A5F 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(30, 58, 95, 0.35);
 }
 
 .ru-container .ru-submit-btn:not(:disabled):active {
@@ -430,35 +486,37 @@
 }
 
 .ru-container .ru-cancel-btn {
-  padding: 12px 20px;
-  background: none;
-  border: 1px solid var(--ru-border);
-  border-radius: 10px;
+  padding: 0.85rem 1.5rem;
+  background: #ffffff;
+  border: 2px solid var(--ru-border);
+  border-radius: 0.75rem;
   color: var(--ru-text-secondary);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
 
 .ru-container .ru-cancel-btn:hover {
   border-color: var(--ru-text-secondary);
   color: var(--ru-text-primary);
+  background: var(--ru-card-hover);
 }
 
-.ru-container .ru-sidebar-panel {
-  width: 260px;
-  flex-shrink: 0;
-}
-
+/* ===== Sidebar ===== */
 .ru-container .ru-info-card {
   background: var(--ru-card);
-  border: 1px solid var(--ru-border);
-  border-radius: 14px;
-  padding: 20px;
+  border: 2px solid var(--ru-border);
+  border-radius: 1rem;
+  padding: 22px;
   margin-bottom: 16px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  transition: box-shadow 0.25s ease;
+}
+
+.ru-container .ru-info-card:hover {
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.08);
 }
 
 .ru-container .ru-info-card h3 {
@@ -484,19 +542,19 @@
 }
 
 .ru-container .ru-step-num {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--ru-accent-dim);
-  border: 1px solid rgba(108, 99, 255, 0.3);
-  color: var(--ru-accent-light);
+  border: 1.5px solid rgba(30, 58, 95, 0.25);
+  color: var(--ru-accent);
   font-size: 11px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-family: 'DM Mono', monospace;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 .ru-container .ru-step-body .ru-step-title {
@@ -532,12 +590,15 @@
   font-size: 13px;
   flex-shrink: 0;
   margin-top: 1px;
+  color: var(--ru-success);
+  font-weight: 700;
 }
 
+/* ===== Progress Bar ===== */
 .ru-container .ru-progress-bar-wrap {
-  background: #eaecf8;
+  background: #E1E6ED;
   border-radius: 20px;
-  height: 6px;
+  height: 8px;
   overflow: hidden;
   margin-top: 6px;
 }
@@ -545,8 +606,8 @@
 .ru-container .ru-progress-bar {
   height: 100%;
   border-radius: 20px;
-  background: linear-gradient(90deg, var(--ru-accent), var(--ru-accent-light));
-  transition: width 0.4s ease;
+  background: linear-gradient(90deg, #1E3A5F, #4A90D9);
+  transition: width 0.5s ease-out;
 }
 
 .ru-container .ru-progress-labels {
@@ -558,20 +619,19 @@
 }
 
 .ru-container .ru-progress-labels span:last-child {
-  color: var(--ru-accent-light);
+  color: var(--ru-accent);
   font-weight: 600;
 }
 
+/* ===== Animations ===== */
 @keyframes ru-checkIn {
   0% {
     transform: scale(0.6);
     opacity: 0;
   }
-
   70% {
     transform: scale(1.1);
   }
-
   100% {
     transform: scale(1);
     opacity: 1;
@@ -579,15 +639,16 @@
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+/* ===== Success Modal ===== */
 .ru-success-overlay {
   display: none;
   position: fixed;
@@ -605,11 +666,11 @@
 
 .ru-success-modal {
   background: #ffffff;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  border-radius: 20px;
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  border-radius: 1rem;
   padding: 40px;
   text-align: center;
-  max-width: 360px;
+  max-width: 380px;
   animation: ru-checkIn 0.4s ease;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
@@ -617,14 +678,14 @@
 .ru-success-icon {
   width: 64px;
   height: 64px;
-  background: rgba(34, 197, 94, 0.08);
+  background: rgba(16, 185, 129, 0.08);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
   margin: 0 auto 20px;
-  border: 2px solid rgba(34, 197, 94, 0.3);
+  border: 2px solid rgba(16, 185, 129, 0.3);
 }
 
 .ru-success-modal h2 {
@@ -632,12 +693,12 @@
   font-weight: 700;
   margin-bottom: 8px;
   margin-top: 0;
-  color: #1a1d2e;
+  color: #1A2B3C;
 }
 
 .ru-success-modal p {
   font-size: 14px;
-  color: #6b7080;
+  color: #3D5168;
   line-height: 1.6;
   margin-bottom: 24px;
 }
@@ -645,33 +706,49 @@
 .ru-modal-close {
   margin-top: 24px;
   padding: 10px 32px;
-  background: #22c55e;
+  background: #10B981;
   border: none;
-  border-radius: 10px;
+  border-radius: 0.75rem;
   color: #fff;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
 
 .ru-modal-close:hover {
-  background: #16a34a;
+  background: #059669;
+  transform: translateY(-1px);
 }
 
-.ru-content-flex {
-  display: flex;
-  gap: 28px;
-  align-items: flex-start;
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .ru-container .ru-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ru-container .ru-checkbox-group {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 1024px) {
   .ru-content-flex {
     flex-direction: column;
   }
-
   .ru-container .ru-sidebar-panel {
     width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .ru-container {
+    padding: 0 16px;
+  }
+  .ru-container .ru-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .ru-container .ru-checkbox-group {
+    grid-template-columns: 1fr;
   }
 }

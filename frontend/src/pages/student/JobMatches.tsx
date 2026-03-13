@@ -18,7 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { RootState, AppDispatch } from '../../store';
-import { fetchRecommendedJobs, fetchSavedJobs, saveJob, unsaveJob, applyForJob } from '../../store/slices/jobSlice';
+import { fetchRecommendedJobs, fetchSavedJobs, fetchAppliedJobs, saveJob, unsaveJob, applyForJob } from '../../store/slices/jobSlice';
 import { toast } from 'react-hot-toast';
 
 interface JobDisplay {
@@ -126,8 +126,9 @@ const mockJobs: JobDisplay[] = [
 
 const JobMatches: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const { user } = useSelector((state: RootState) => state.auth);
   const { currentResume } = useSelector((state: RootState) => state.resume);
-  const { recommendedJobs, savedJobIds } = useSelector((state: RootState) => state.jobs);
+  const { recommendedJobs, savedJobIds, appliedJobIds } = useSelector((state: RootState) => state.jobs);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('all');
@@ -140,35 +141,36 @@ const JobMatches: React.FC = () => {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applyJobId, setApplyJobId] = useState<string | null>(null);
   const [coverLetter, setCoverLetter] = useState('');
+  const [githubLink, setGithubLink] = useState('');
+  const [linkedinLink, setLinkedinLink] = useState('');
+  const [portfolioLink, setPortfolioLink] = useState('');
   const [isApplying, setIsApplying] = useState(false);
 
-  // Fetch recommended jobs and saved jobs on mount
+  // Fetch recommended jobs, saved, and applied on mount
   useEffect(() => {
     dispatch(fetchRecommendedJobs());
     dispatch(fetchSavedJobs());
+    dispatch(fetchAppliedJobs());
   }, [dispatch]);
 
-  const userSkills = currentResume?.skills?.technical || [];
+  const userSkills: string[] = (user as any)?.skills?.length > 0 ? (user as any).skills : currentResume?.skills?.technical || [];
 
-  // Transform API jobs to display format, fallback to mock data
+  // Transform API jobs to display format
   const mapApiJobs = (): JobDisplay[] => {
-    if (recommendedJobs.length > 0) {
-      return recommendedJobs.map((j: any) => ({
-        id: j._id,
-        title: j.title,
-        company: j.companyName,
-        location: j.location,
-        type: j.type === 'full-time' ? 'Full-time' : j.type === 'part-time' ? 'Part-time' : j.type === 'internship' ? 'Internship' : 'Contract',
-        salary: j.salary ? `₹${j.salary.min / 100000}-${j.salary.max / 100000} LPA` : 'Not disclosed',
-        postedAt: j.createdAt ? new Date(j.createdAt).toLocaleDateString() : 'Recently',
-        description: j.description,
-        requirements: j.requirements || [],
-        skills: j.requiredSkills || [],
-        matchScore: j.matchScore,
-        logo: j.companyLogo || j.companyName?.[0] || '?',
-      }));
-    }
-    return mockJobs;
+    return recommendedJobs.map((j: any) => ({
+      id: j._id,
+      title: j.title,
+      company: j.companyName,
+      location: j.location,
+      type: j.type === 'full-time' ? 'Full-time' : j.type === 'part-time' ? 'Part-time' : j.type === 'internship' ? 'Internship' : 'Contract',
+      salary: j.salary ? `₹${j.salary.min / 100000}-${j.salary.max / 100000} LPA` : 'Not disclosed',
+      postedAt: j.createdAt ? new Date(j.createdAt).toLocaleDateString() : 'Recently',
+      description: j.description,
+      requirements: j.requirements || [],
+      skills: j.requiredSkills || [],
+      matchScore: j.matchScore,
+      logo: j.companyLogo || j.companyName?.[0] || '?',
+    }));
   };
 
   const allJobs = mapApiJobs();
@@ -210,6 +212,10 @@ const JobMatches: React.FC = () => {
   };
 
   const handleApplyClick = (jobId: string) => {
+    if (appliedJobIds.includes(jobId)) {
+      toast.error('You have already applied for this job');
+      return;
+    }
     setApplyJobId(jobId);
     setCoverLetter('');
     setShowApplyModal(true);
@@ -217,9 +223,30 @@ const JobMatches: React.FC = () => {
 
   const handleSubmitApplication = async () => {
     if (!applyJobId) return;
+
+    if (appliedJobIds.includes(applyJobId)) {
+      toast.error('You have already applied for this job');
+      setShowApplyModal(false);
+      return;
+    }
+
     setIsApplying(true);
     try {
-      await dispatch(applyForJob({ jobId: applyJobId, data: { coverLetter } })).unwrap();
+      await dispatch(applyForJob({ 
+        jobId: applyJobId, 
+        data: { 
+          coverLetter, 
+          githubLink, 
+          linkedinLink, 
+          portfolioLink,
+          university: (user as any)?.education?.[0]?.institution || (user as any)?.department || '',
+          degree: (user as any)?.department || '',
+          cgpa: (user as any)?.cgpa || 0,
+          phone: (user as any)?.phone || '',
+          skills: userSkills,
+          matchScore: selectedJob?.matchScore || 0
+        } 
+      })).unwrap();
       toast.success('Application submitted successfully!');
       setShowApplyModal(false);
     } catch (err: any) {
@@ -449,19 +476,28 @@ const JobMatches: React.FC = () => {
                   <span className={`badge ${job.type === 'Internship' ? 'badge-warning' : 'badge-primary'}`}>
                     {job.type}
                   </span>
-                  {job.matchScore && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 bg-surface-300 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${getMatchBgColor(job.matchScore)}`}
-                          style={{ width: `${job.matchScore}%` }}
-                        />
+                  <div className="flex items-center gap-3">
+                    {job.matchScore && (
+                      <div className="flex items-center gap-2 mr-2">
+                        <span className={`text-sm font-medium ${getMatchColor(job.matchScore)}`}>
+                          {job.matchScore}% Match
+                        </span>
                       </div>
-                      <span className={`text-sm font-medium ${getMatchColor(job.matchScore)}`}>
-                        {job.matchScore}%
+                    )}
+                    {appliedJobIds.includes(job.id) ? (
+                      <span className="px-3 py-1.5 bg-success/10 text-success text-sm font-medium rounded-lg flex items-center gap-1">
+                        <CheckCircleIcon className="w-4 h-4" />
+                        Already Applied
                       </span>
-                    </div>
-                  )}
+                    ) : (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedJob(job); handleApplyClick(job.id); }}
+                        className="px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors"
+                      >
+                        Apply
+                      </button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             ))
@@ -586,15 +622,22 @@ const JobMatches: React.FC = () => {
                       </>
                     )}
                   </motion.button>
-                  <motion.button
-                    className="btn-primary flex-1"
-                    onClick={() => handleApplyClick(selectedJob.id)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <ArrowTopRightOnSquareIcon className="w-5 h-5" />
-                    Apply Now
-                  </motion.button>
+                  {appliedJobIds.includes(selectedJob.id) ? (
+                    <div className="btn-secondary flex-1 flex items-center justify-center gap-2 bg-success/10 text-success border-success/20 cursor-default pointer-events-none">
+                      <CheckCircleIcon className="w-5 h-5" />
+                      Already Applied
+                    </div>
+                  ) : (
+                    <motion.button
+                      className="btn-primary flex-1"
+                      onClick={() => handleApplyClick(selectedJob.id)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <ArrowTopRightOnSquareIcon className="w-5 h-5" />
+                      Apply Now
+                    </motion.button>
+                  )}
                 </div>
               </motion.div>
             ) : (
@@ -631,15 +674,87 @@ const JobMatches: React.FC = () => {
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-text-muted mb-2 block">Cover Letter (optional)</label>
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-text-muted block mb-1">Name</label>
+                    <input type="text" className="input w-full bg-surface-100 text-text-secondary" value={`${user?.firstName} ${user?.lastName}`} disabled />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted block mb-1">Email</label>
+                    <input type="email" className="input w-full bg-surface-100 text-text-secondary" value={user?.email || ''} disabled />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted block mb-1">Phone</label>
+                    <input type="text" className="input w-full bg-surface-100 text-text-secondary" value={(user as any)?.phone || 'Not provided'} disabled />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted block mb-1">CGPA</label>
+                    <input type="text" className="input w-full bg-surface-100 text-text-secondary" value={(user as any)?.cgpa ? Number((user as any).cgpa).toFixed(2) : 'N/A'} disabled />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-text-muted block mb-1">Degree / Branch</label>
+                    <input type="text" className="input w-full bg-surface-100 text-text-secondary" value={(user as any)?.department || 'N/A'} disabled />
+                  </div>
+                </div>
+
+                <div className="border-t border-surface-200 pt-4">
+                  <label className="text-sm font-medium text-text-primary mb-3 block">Additional Information (Editable)</label>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-text-muted block mb-1">GitHub Profile Link</label>
+                      <input 
+                        type="url" 
+                        value={githubLink} 
+                        onChange={e => setGithubLink(e.target.value)} 
+                        placeholder="https://github.com/username" 
+                        className="input w-full" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-text-muted block mb-1">LinkedIn Profile Link</label>
+                      <input 
+                        type="url" 
+                        value={linkedinLink} 
+                        onChange={e => setLinkedinLink(e.target.value)} 
+                        placeholder="https://linkedin.com/in/username" 
+                        className="input w-full" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-text-muted block mb-1">Portfolio Link</label>
+                      <input 
+                        type="url" 
+                        value={portfolioLink} 
+                        onChange={e => setPortfolioLink(e.target.value)} 
+                        placeholder="https://yourportfolio.com" 
+                        className="input w-full" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-surface-200 pt-3">
+                  <label className="text-xs text-text-muted block mb-2">Your Skills (Auto-fetched from profile)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {userSkills.length > 0 ? userSkills.map(skill => (
+                      <span key={skill} className="px-2 py-1 bg-surface-200 text-xs font-medium text-text-secondary rounded-md">
+                        {skill}
+                      </span>
+                    )) : <span className="text-xs text-text-light italic">No skills added to profile yet.</span>}
+                  </div>
+                </div>
+
+                <div className="border-t border-surface-200 pt-3">
+                  <label className="text-sm text-text-primary font-medium block mb-2">Cover Letter (optional)</label>
                   <textarea
                     value={coverLetter}
                     onChange={(e) => setCoverLetter(e.target.value)}
-                    placeholder="Tell the employer why you're a great fit..."
+                    placeholder="Tell the employer why you're a great fit for this specific role..."
                     className="input w-full resize-none"
-                    rows={5}
+                    rows={4}
                   />
                 </div>
               </div>

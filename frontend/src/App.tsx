@@ -34,6 +34,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import BatchAnalytics from './pages/admin/BatchAnalytics';
 import StudentManagement from './pages/admin/StudentManagement';
 import JobManagement from './pages/admin/JobManagement';
+import PlacementApplications from './pages/admin/PlacementApplications';
 import AlumniEngagement from './pages/admin/AlumniEngagement';
 import PlacementReports from './pages/admin/PlacementReports';
 import PlacementPredictions from './pages/admin/PlacementPredictions';
@@ -129,6 +130,7 @@ const App: React.FC = () => {
         <Route path="/admin/analytics" element={<BatchAnalytics />} />
         <Route path="/admin/students" element={<StudentManagement />} />
         <Route path="/admin/jobs" element={<JobManagement />} />
+        <Route path="/admin/applications" element={<PlacementApplications />} />
         <Route path="/admin/alumni" element={<AlumniEngagement />} />
         <Route path="/admin/reports" element={<PlacementReports />} />
         <Route path="/admin/predictions" element={<PlacementPredictions />} />

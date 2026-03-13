@@ -163,6 +163,7 @@ const jobSchema = new Schema<IJob>(
 jobSchema.index({ status: 1, applicationDeadline: 1 });
 jobSchema.index({ companyName: 'text', title: 'text', description: 'text' });
 jobSchema.index({ requiredSkills: 1 });
-jobSchema.index({ 'eligibility.departments': 1, 'eligibility.batches': 1 });
+jobSchema.index({ 'eligibility.departments': 1 });
+jobSchema.index({ 'eligibility.batches': 1 });
 
 export const Job = mongoose.model<IJob>('Job', jobSchema);

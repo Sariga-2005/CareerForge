@@ -36,8 +36,14 @@ export const jobService = {
     },
 
     // Apply for a job
-    applyForJob: async (jobId: string, data: { coverLetter?: string; resumeId?: string }) => {
+    applyForJob: async (jobId: string, data: any) => {
         const response = await api.post(`/jobs/${jobId}/apply`, data);
+        return response.data.data;
+    },
+
+    // Get user's applied jobs
+    getMyApplications: async () => {
+        const response = await api.get('/jobs/applications/me');
         return response.data.data;
     },
 

@@ -56,6 +56,7 @@ const adminNavItems: NavItem[] = [
   { path: '/admin/analytics', label: 'Batch Analytics', icon: ChartBarIcon },
   { path: '/admin/students', label: 'Student Management', icon: UsersIcon },
   { path: '/admin/jobs', label: 'Job Management', icon: BriefcaseIcon },
+  { path: '/admin/applications', label: 'Applications', icon: DocumentTextIcon },
   { path: '/admin/alumni', label: 'Alumni Engagement', icon: UserGroupIcon },
   { path: '/admin/reports', label: 'Placement Reports', icon: DocumentChartBarIcon },
   { path: '/admin/predictions', label: 'Placement Predictions', icon: ChartBarIcon },
@@ -356,13 +357,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role = 'student' }) =
               </Menu>
 
               {/* Settings */}
-              <motion.button
-                className="w-10 h-10 rounded-xl hover:bg-surface-200 flex items-center justify-center text-text-secondary transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Cog6ToothIcon className="w-5 h-5" />
-              </motion.button>
+              <Link to={`/${role}/profile`}>
+                <motion.button
+                  className="w-10 h-10 rounded-xl hover:bg-surface-200 flex items-center justify-center text-text-secondary transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Cog6ToothIcon className="w-5 h-5" />
+                </motion.button>
+              </Link>
 
               {/* Profile quick access */}
               <Link to={`/${role}/profile`}>

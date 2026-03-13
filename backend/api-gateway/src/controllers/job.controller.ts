@@ -105,6 +105,15 @@ export class JobController {
         jobId,
         coverLetter: req.body.coverLetter || '',
         resumeId: req.body.resumeId,
+        githubLink: req.body.githubLink,
+        linkedinLink: req.body.linkedinLink,
+        portfolioLink: req.body.portfolioLink,
+        skills: req.body.skills || [],
+        matchScore: req.body.matchScore,
+        university: req.body.university,
+        degree: req.body.degree,
+        cgpa: req.body.cgpa,
+        phone: req.body.phone,
       });
 
       job.stats.applications += 1;
@@ -384,6 +393,114 @@ export class JobController {
         success: true,
         message: 'Job removed from saved',
         data: { savedJobs: user.savedJobs || [] },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Get user's applied jobs
+  getMyApplications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const applications = await JobApplication.find({ userId: req.userId })
+        .populate('jobId', 'title companyName location type salary')
+        .sort({ appliedAt: -1 });
+
+      res.json({
+        success: true,
+        data: { applications },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Admin: Get all applications (across jobs or specific)
+  getAllApplications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const {
+        jobId,
+        status,
+        minMatchScore,
+        search, // user name or email
+      } = req.query;
+
+      const query: Record<string, any> = {};
+
+      if (jobId) query.jobId = jobId;
+      if (status) query.status = status;
+      if (minMatchScore) query.matchScore = { $gte: Number(minMatchScore) };
+
+      // Base query setup
+      let dbQuery = JobApplication.find(query)
+        .populate('userId', 'firstName lastName email phone department cgpa')
+        .populate('jobId', 'title companyName location')
+        .sort({ appliedAt: -1 });
+
+      const applications = await dbQuery.exec();
+
+      // If text search on user name/email is needed, filter after population (or use aggregation)
+      let filteredSpecs = applications;
+      if (search) {
+        const lowerSearch = (search as string).toLowerCase();
+        filteredSpecs = applications.filter((app: any) => {
+          const user = app.userId;
+          if (!user) return false;
+          const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+          return fullName.includes(lowerSearch) || user.email.toLowerCase().includes(lowerSearch);
+        });
+      }
+
+      res.json({
+        success: true,
+        data: { applications: filteredSpecs },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Admin: Update batch application status
+  updateApplicationStatus = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { applicationIds, status } = req.body; 
+
+      if (!applicationIds || !Array.isArray(applicationIds)) {
+        throw new ApiError('applicationIds array is required', 400);
+      }
+      
+      const validStatuses = ['pending', 'reviewed', 'shortlisted', 'rejected', 'accepted', 'forwarded_to_company'];
+      if (!validStatuses.includes(status)) {
+        throw new ApiError('Invalid status', 400);
+      }
+
+      await JobApplication.updateMany(
+        { _id: { $in: applicationIds } },
+        { $set: { status } }
+      );
+
+      res.json({
+        success: true,
+        message: `Successfully updated ${applicationIds.length} application(s) to ${status}`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Admin: Export applications
+  exportApplications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { applicationIds } = req.body;
+      
+      const applications: any = await JobApplication.find({ _id: { $in: applicationIds } })
+        .populate('userId', 'firstName lastName email phone department cgpa')
+        .populate('jobId', 'title companyName')
+        .lean();
+
+      res.json({
+        success: true,
+        data: { applications },
       });
     } catch (error) {
       next(error);

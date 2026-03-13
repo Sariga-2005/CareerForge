@@ -45,11 +45,14 @@ export class ResumeController {
         isActive: true,
       });
 
-      // Trigger async parsing with file buffer and mimetype
+      // Await parsing so parsedData is ready before the frontend calls analyzeResume
       const io = req.app.get('io');
-      this.triggerParsing(resume._id.toString(), buffer, originalname, mimetype, req.userId as string, io).catch((err) =>
-        logger.error('Resume parsing failed:', err)
-      );
+      try {
+        await this.triggerParsing(resume._id.toString(), buffer, originalname, mimetype, req.userId as string, io);
+      } catch (err) {
+        // Parsing failed — upload still succeeds, user can re-analyze later
+        logger.error('Resume parsing failed:', err);
+      }
 
       logger.info(`Resume uploaded: ${resume._id} by user ${req.userId}`);
 

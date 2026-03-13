@@ -25,12 +25,37 @@ router.use(authenticate);
 // Get all active jobs (with filters)
 router.get('/', jobController.getJobs);
 
-// Saved jobs routes (must be before /:id to avoid conflicts)
+// Application routes (MUST be before /:id to avoid shadowing)
+router.get('/applications/me', jobController.getMyApplications);
+
+// Admin: Get all applications
+router.get(
+  '/applications',
+  authorize('admin'),
+  jobController.getAllApplications
+);
+
+router.post(
+  '/applications/export',
+  authorize('admin'),
+  jobController.exportApplications
+);
+
+router.patch(
+  '/applications/status',
+  authorize('admin'),
+  jobController.updateApplicationStatus
+);
+
+// Saved jobs routes
 router.get('/saved', jobController.getSavedJobs);
 router.post('/save', jobController.saveJob);
 router.delete('/unsave/:jobId', jobController.unsaveJob);
 
-// Get job by ID
+// Get recommended jobs for user
+router.get('/user/recommended', jobController.getRecommendedJobs);
+
+// Parameterized job routes (placed after specific routes)
 router.get('/:id', jobController.getJobById);
 
 // Apply for job
@@ -39,10 +64,7 @@ router.post('/:id/apply', jobController.applyForJob);
 // Check if user has applied
 router.get('/:id/application-status', jobController.getApplicationStatus);
 
-// Get recommended jobs for user
-router.get('/user/recommended', jobController.getRecommendedJobs);
-
-// Admin routes
+// Admin routes for job management
 router.post(
   '/',
   authorize('admin'),

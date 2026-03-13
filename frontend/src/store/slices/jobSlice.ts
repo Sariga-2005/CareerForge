@@ -27,6 +27,7 @@ interface JobState {
     jobs: Job[];
     recommendedJobs: Job[];
     savedJobIds: string[];
+    appliedJobIds: string[];
     isLoading: boolean;
     error: string | null;
 }
@@ -35,6 +36,7 @@ const initialState: JobState = {
     jobs: [],
     recommendedJobs: [],
     savedJobIds: [],
+    appliedJobIds: [],
     isLoading: false,
     error: null,
 };
@@ -72,10 +74,16 @@ export const unsaveJob = createAsyncThunk('jobs/unsave', async (jobId: string, {
     } catch (err: any) { return rejectWithValue(err.response?.data?.message || 'Failed to unsave job'); }
 });
 
-export const applyForJob = createAsyncThunk('jobs/apply', async ({ jobId, data }: { jobId: string; data: { coverLetter?: string; resumeId?: string } }, { rejectWithValue }) => {
+export const applyForJob = createAsyncThunk('jobs/apply', async ({ jobId, data }: { jobId: string; data: any }, { rejectWithValue }) => {
     try {
         return await jobService.applyForJob(jobId, data);
     } catch (err: any) { return rejectWithValue(err.response?.data?.message || 'Failed to apply'); }
+});
+
+export const fetchAppliedJobs = createAsyncThunk('jobs/fetchApplied', async (_, { rejectWithValue }) => {
+    try {
+        return await jobService.getMyApplications();
+    } catch (err: any) { return rejectWithValue(err.response?.data?.message || 'Failed to load applied jobs'); }
 });
 
 /* ═══════ Slice ═══════ */
@@ -110,6 +118,17 @@ const jobSlice = createSlice({
             })
             .addCase(unsaveJob.fulfilled, (state, action) => {
                 state.savedJobIds = state.savedJobIds.filter(id => id !== action.payload);
+            })
+            
+            .addCase(fetchAppliedJobs.fulfilled, (state, action) => {
+                const applications = action.payload?.applications || [];
+                state.appliedJobIds = applications.map((app: any) => app.jobId._id || app.jobId);
+            })
+            .addCase(applyForJob.fulfilled, (state, action) => {
+                const appId = action.payload?.application?.jobId?._id || action.payload?.application?.jobId;
+                if (appId && !state.appliedJobIds.includes(appId)) {
+                    state.appliedJobIds.push(appId);
+                }
             });
     },
 });
