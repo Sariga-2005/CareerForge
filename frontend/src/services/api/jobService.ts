@@ -52,4 +52,13 @@ export const jobService = {
         const response = await api.get(`/jobs/${jobId}/application-status`);
         return response.data.data;
     },
+
+    // RAG Analysis: Semantic Vector Search + LLM Career Analysis
+    getRagAnalysis: async (resumeText?: string) => {
+        const response = await api.post('/jobs/rag-analysis', {
+            resume_text: resumeText || '',
+            limit: 5,
+        });
+        return response.data.data;
+    },
 };

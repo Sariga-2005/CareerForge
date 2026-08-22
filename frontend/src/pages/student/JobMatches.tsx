@@ -15,10 +15,15 @@ import {
   XMarkIcon,
   CheckBadgeIcon,
   CheckCircleIcon,
+  SparklesIcon,
+  LightBulbIcon,
+  AcademicCapIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { RootState, AppDispatch } from '../../store';
 import { fetchRecommendedJobs, fetchSavedJobs, fetchAppliedJobs, saveJob, unsaveJob, applyForJob } from '../../store/slices/jobSlice';
+import { jobService } from '../../services/api/jobService';
 import { toast } from 'react-hot-toast';
 
 interface JobDisplay {
@@ -135,7 +140,7 @@ const JobMatches: React.FC = () => {
   const [selectedType, setSelectedType] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobDisplay | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'saved' | 'insights'>('all');
 
   // Apply Modal state
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -145,6 +150,27 @@ const JobMatches: React.FC = () => {
   const [linkedinLink, setLinkedinLink] = useState('');
   const [portfolioLink, setPortfolioLink] = useState('');
   const [isApplying, setIsApplying] = useState(false);
+
+  // RAG Analysis state
+  const [ragData, setRagData] = useState<any>(null);
+  const [ragLoading, setRagLoading] = useState(false);
+  const [ragError, setRagError] = useState<string | null>(null);
+
+  const fetchRagInsights = async () => {
+    setRagLoading(true);
+    setRagError(null);
+    try {
+      const result = await jobService.getRagAnalysis();
+      setRagData(result);
+      toast.success('AI career insights generated!');
+    } catch (err: any) {
+      const msg = err?.message || err?.error || 'Failed to generate AI insights';
+      setRagError(msg);
+      toast.error(msg);
+    } finally {
+      setRagLoading(false);
+    }
+  };
 
   // Fetch recommended jobs, saved, and applied on mount
   useEffect(() => {
@@ -305,6 +331,16 @@ const JobMatches: React.FC = () => {
           <BookmarkSolidIcon className="w-4 h-4 inline mr-2" />
           Saved Jobs ({savedJobsList.length})
         </button>
+        <button
+          onClick={() => { setActiveTab('insights'); if (!ragData && !ragLoading) fetchRagInsights(); }}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'insights'
+            ? 'bg-white text-primary shadow-md'
+            : 'text-text-muted hover:text-text-secondary'
+            }`}
+        >
+          <SparklesIcon className="w-4 h-4 inline mr-2" />
+          AI Insights
+        </button>
 
       </motion.div>
 
@@ -395,6 +431,204 @@ const JobMatches: React.FC = () => {
         </AnimatePresence>
       </motion.div>
 
+      {/* RAG Insights Panel */}
+      {activeTab === 'insights' ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                <SparklesIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-text-primary">AI Career Insights</h2>
+                <p className="text-sm text-text-muted">Powered by RAG — Semantic Search + AI Analysis</p>
+              </div>
+            </div>
+            <motion.button
+              onClick={fetchRagInsights}
+              disabled={ragLoading}
+              className="btn-secondary flex items-center gap-2 text-sm"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <ArrowPathIcon className={`w-4 h-4 ${ragLoading ? 'animate-spin' : ''}`} />
+              {ragLoading ? 'Analyzing...' : 'Refresh'}
+            </motion.button>
+          </div>
+
+          {/* Loading State */}
+          {ragLoading && (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="card animate-pulse">
+                  <div className="h-4 bg-surface-300 rounded w-1/3 mb-3"></div>
+                  <div className="h-3 bg-surface-200 rounded w-2/3 mb-2"></div>
+                  <div className="h-3 bg-surface-200 rounded w-1/2"></div>
+                </div>
+              ))}
+              <p className="text-center text-text-muted text-sm mt-4">
+                🔍 Searching Vector DB for semantic matches, then generating AI analysis...
+              </p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {ragError && !ragLoading && (
+            <div className="card border-red-200 bg-red-50 text-center py-8">
+              <p className="text-red-600 font-medium mb-2">Analysis Failed</p>
+              <p className="text-red-400 text-sm mb-4">{ragError}</p>
+              <button onClick={fetchRagInsights} className="btn-primary text-sm">Try Again</button>
+            </div>
+          )}
+
+          {/* RAG Results */}
+          {ragData && !ragLoading && (
+            <div className="space-y-6">
+              {/* Method Badge */}
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-violet-100 text-violet-700 text-xs font-semibold rounded-full">
+                  {ragData.method || 'RAG Pipeline'}
+                </span>
+                <span className="text-xs text-text-muted">
+                  {ragData.jobs_retrieved_from_vectordb || 0} jobs retrieved from Vector DB
+                </span>
+              </div>
+
+              {/* Overall Career Advice */}
+              {ragData.analysis?.overall_career_advice && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="card bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200"
+                >
+                  <div className="flex items-start gap-3">
+                    <LightBulbIcon className="w-6 h-6 text-violet-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-text-primary mb-1">Career Advice</h3>
+                      <p className="text-text-secondary text-sm leading-relaxed">
+                        {ragData.analysis.overall_career_advice}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Top Matches */}
+              {ragData.analysis?.top_matches?.map((match: any, idx: number) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="card hover:shadow-card-lg transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-text-primary text-lg">{match.job_title}</h3>
+                      <p className="text-sm text-text-secondary">{match.company}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-xl font-bold ${
+                        match.fit_score >= 80 ? 'text-success' :
+                        match.fit_score >= 60 ? 'text-warning' : 'text-text-muted'
+                      }`}>
+                        {match.fit_score}%
+                      </span>
+                      <p className="text-xs text-text-muted">Fit Score</p>
+                    </div>
+                  </div>
+
+                  {/* Why Good Fit */}
+                  <p className="text-sm text-text-secondary mb-3 leading-relaxed">{match.why_good_fit}</p>
+
+                  {/* Skill Gaps */}
+                  {match.skill_gaps?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Skill Gaps</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {match.skill_gaps.map((skill: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 bg-red-50 text-red-600 text-xs rounded-lg font-medium">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preparation Tips */}
+                  {match.preparation_tips?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">How to Prepare</p>
+                      <ul className="space-y-1">
+                        {match.preparation_tips.map((tip: string, i: number) => (
+                          <li key={i} className="text-sm text-text-secondary flex items-start gap-2">
+                            <CheckCircleIcon className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+
+              {/* Skills in Demand + Learning Path */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Skills in Demand */}
+                {ragData.analysis?.skills_in_demand?.length > 0 && (
+                  <div className="card">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ChartBarIcon className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-text-primary">Skills in Demand</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {ragData.analysis.skills_in_demand.map((skill: string, i: number) => (
+                        <span key={i} className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-lg font-medium">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Learning Path */}
+                {ragData.analysis?.recommended_learning_path?.length > 0 && (
+                  <div className="card">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AcademicCapIcon className="w-5 h-5 text-secondary" />
+                      <h3 className="font-semibold text-text-primary">Recommended Learning Path</h3>
+                    </div>
+                    <ol className="space-y-2">
+                      {ragData.analysis.recommended_learning_path.map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
+                          <span className="w-5 h-5 rounded-full bg-secondary/10 text-secondary flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                            {i + 1}
+                          </span>
+                          {item}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+
+              {/* Retrieval Summary */}
+              {ragData.analysis?.retrieval_summary && (
+                <div className="text-center text-xs text-text-muted py-2 border-t border-surface-200">
+                  <SparklesIcon className="w-3 h-3 inline mr-1" />
+                  {ragData.analysis.retrieval_summary}
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
+      ) : (
+      <>
       {/* Results Summary */}
       <div className="flex items-center justify-between">
         <p className="text-text-muted">
@@ -656,6 +890,8 @@ const JobMatches: React.FC = () => {
           </AnimatePresence>
         </div>
       </div>
+      </>
+      )}
       {/* Apply Modal */}
       <AnimatePresence>
         {showApplyModal && (
