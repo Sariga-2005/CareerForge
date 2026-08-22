@@ -28,7 +28,7 @@ CareerForge is an intelligent placement platform that leverages AI to streamline
 |---------|-------------|
 | **AI Resume Analysis** | Semantic analysis for resume scoring, ATS compatibility, and improvement suggestions |
 | **Adaptive Mock Interviews** | AI-powered interviews with speech recognition and real-time feedback |
-| **Smart Job Matching** | ML-based algorithm matching skills with job requirements via AI Match Scores |
+| **Smart Job Matching** | RAG-powered semantic matching using Sentence Transformers and Qdrant Vector DB |
 | **Placement Applications** | End-to-end workflow for students to apply and admins to manage/export applications |
 | **Career Advisor** | AI-driven career path recommendations based on skills and goals |
 | **Learning Roadmap** | Personalized skill development roadmaps |
@@ -52,6 +52,8 @@ CareerForge is an intelligent placement platform that leverages AI to streamline
 ### Backend
 - **Node.js + Express** (API Gateway - Port 5000)
 - **Python + FastAPI** (AI Microservices - Ports 5001, 5002)
+- **Qdrant Vector DB** for semantic search and RAG pipelines
+- **Sentence Transformers** for local text embeddings
 - **MongoDB Atlas** for database
 - **Socket.IO** for real-time application notifications
 - **Express Validator** for robust data validation

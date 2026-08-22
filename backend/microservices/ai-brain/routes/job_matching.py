@@ -113,6 +113,28 @@ def get_recommendations():
             'error': str(e)
         }), 500
 
+@job_matching_bp.route('/index-job', methods=['POST'])
+def index_job_to_qdrant():
+    """
+    Index a job into Qdrant for semantic search
+    """
+    try:
+        data = request.get_json()
+        job = data.get('job')
+        
+        if not job:
+            return jsonify({'error': 'Job data is required'}), 400
+            
+        success = matcher.index_job(job)
+        if success:
+            return jsonify({'success': True, 'message': 'Job indexed successfully'}), 200
+        else:
+            return jsonify({'success': False, 'error': 'Failed to index job'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error indexing job: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @job_matching_bp.route('/ai-analyze', methods=['POST'])
 def ai_analyze_job():
@@ -173,3 +195,91 @@ def ai_recommend_jobs():
             'error': str(e)
         }), 500
 
+
+# =============================================================================
+# RAG (Retrieval-Augmented Generation) Endpoints
+# =============================================================================
+
+@job_matching_bp.route('/rag-match', methods=['POST'])
+def rag_match():
+    """
+    Full RAG pipeline: Retrieve relevant jobs from Qdrant Vector DB,
+    then feed them to the LLM for augmented career analysis.
+    """
+    try:
+        data = request.get_json()
+
+        student_profile = data.get('student_profile')
+        limit = data.get('limit', 5)
+
+        if not student_profile:
+            return jsonify({'error': 'Student profile is required'}), 400
+
+        result = matcher.rag_analyze_match(student_profile, limit)
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        logger.error(f"Error in RAG match: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@job_matching_bp.route('/semantic-search', methods=['POST'])
+def semantic_search():
+    """
+    Vector-only search: Retrieve the most semantically similar jobs
+    from Qdrant without LLM generation (useful for quick lookups).
+    """
+    try:
+        data = request.get_json()
+
+        query = data.get('query', '')
+        limit = data.get('limit', 10)
+
+        if not query:
+            return jsonify({'error': 'Search query is required'}), 400
+
+        results = matcher.semantic_search_jobs(query, limit)
+
+        return jsonify({
+            'success': True,
+            'results': results,
+            'count': len(results)
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error in semantic search: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@job_matching_bp.route('/batch-index', methods=['POST'])
+def batch_index_jobs():
+    """
+    Index multiple jobs into Qdrant Vector DB at once.
+    """
+    try:
+        data = request.get_json()
+        jobs = data.get('jobs', [])
+
+        if not jobs:
+            return jsonify({'error': 'Jobs list is required'}), 400
+
+        result = matcher.batch_index_jobs(jobs)
+
+        return jsonify({
+            'success': True,
+            **result
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error in batch indexing: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

@@ -27,6 +27,10 @@ class Config:
     REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
     REDIS_DB = int(os.getenv('REDIS_DB', 0))
     
+    # Qdrant Vector DB Config
+    QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
+    QDRANT_PORT = int(os.getenv('QDRANT_PORT', 6333))
+    
     # Matching Algorithm Config
     SIMILARITY_THRESHOLD = float(os.getenv('SIMILARITY_THRESHOLD', 0.7))
     MAX_RECOMMENDATIONS = int(os.getenv('MAX_RECOMMENDATIONS', 10))
